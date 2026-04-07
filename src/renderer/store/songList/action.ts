@@ -2,6 +2,7 @@
 import { deduplicationList, toNewMusicInfo } from '@renderer/utils'
 import musicSdk from '@renderer/utils/musicSdk'
 import { markRaw, markRawList } from '@common/utils/vueTools'
+import { getDefaultOnlineSource } from '@renderer/platform/sources'
 import {
   tags,
   listInfo,
@@ -18,6 +19,7 @@ import type {
 } from './state'
 
 const cache = new Map<string, any>()
+const defaultSource = getDefaultOnlineSource()
 
 export const setTags = (tagInfo: TagInfo, source: LX.OnlineSource) => {
   tags[source] = markRaw(tagInfo)
@@ -68,7 +70,7 @@ export const setSelectListInfo = (info: ListInfoItem) => {
 export const clearListDetail = () => {
   listDetailInfo.list = []
   listDetailInfo.id = ''
-  listDetailInfo.source = 'kw'
+  listDetailInfo.source = defaultSource
   listDetailInfo.total = 0
   listDetailInfo.limit = 30
   listDetailInfo.page = 1

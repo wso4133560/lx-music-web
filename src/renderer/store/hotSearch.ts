@@ -1,5 +1,6 @@
 import { reactive, markRaw } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
+import { shouldExposeAggregatedSource } from '@renderer/platform/sources'
 
 // import { deduplicationList } from '@common/utils/renderer'
 
@@ -21,7 +22,7 @@ for (const source of music.sources) {
   sources.push(source.id as LX.OnlineSource)
   sourceList[source.id as LX.OnlineSource] = reactive<string[]>([])
 }
-sources.push('all')
+if (shouldExposeAggregatedSource(sources.length)) sources.push('all')
 
 
 const setList = (source: LX.OnlineSource, list: string[]): string[] => {

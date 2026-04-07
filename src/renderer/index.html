@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LX Music</title>
+  <link rel="icon" href="data:,">
 </head>
 <body id="body" style="background-color: transparent;">
   <!-- <div id="waiting-mask">
@@ -15,6 +16,55 @@
   <div id="root" style="display: none;">
   </div>
   <script>
+    class SimpleBuffer extends Uint8Array {
+      static from(value = '', encoding = 'utf8') {
+        if (value instanceof Uint8Array) return new SimpleBuffer(value)
+        if (Array.isArray(value)) return new SimpleBuffer(value)
+        if (typeof value != 'string') return new SimpleBuffer([])
+        if (encoding === 'base64') {
+          const binary = atob(value)
+          return new SimpleBuffer(Array.from(binary, char => char.charCodeAt(0)))
+        }
+        if (encoding === 'hex') {
+          const bytes = value.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) ?? []
+          return new SimpleBuffer(bytes)
+        }
+        return new SimpleBuffer(new TextEncoder().encode(value))
+      }
+      static alloc(size) {
+        return new SimpleBuffer(size)
+      }
+      static concat(list) {
+        const total = list.reduce((sum, item) => sum + item.length, 0)
+        const result = new SimpleBuffer(total)
+        let offset = 0
+        for (const item of list) {
+          result.set(item, offset)
+          offset += item.length
+        }
+        return result
+      }
+      toString(encoding = 'utf8') {
+        if (encoding === 'base64') {
+          let binary = ''
+          for (const byte of this) binary += String.fromCharCode(byte)
+          return btoa(binary)
+        }
+        if (encoding === 'hex') {
+          return Array.from(this).map(byte => byte.toString(16).padStart(2, '0')).join('')
+        }
+        return new TextDecoder().decode(this)
+      }
+    }
+    window.Buffer = window.Buffer || SimpleBuffer
+    window.process = window.process || {
+      env: {},
+      versions: {},
+      platform: /windows/i.test(navigator.userAgent) ? 'win32' : /mac os/i.test(navigator.userAgent) ? 'darwin' : 'linux',
+      arch: '',
+      on: () => {},
+      off: () => {},
+    }
     const formatLang = (lang = 'en') => {
       if (lang === 'zh-cn') return 'zh-Hans'
       if (lang === 'zh-tw') return 'zh-Hant'
@@ -24,7 +74,8 @@
       document.documentElement.setAttribute('lang', formatLang(lang))
     }
     window.setLang()
-    document.documentElement.classList.add(/os=(\w+)/.exec(window.location.search)[1])
+    const osMatch = /os=(\w+)/.exec(window.location.search)
+    document.documentElement.classList.add(osMatch ? osMatch[1] : window.process.platform)
     window.shouldUseDarkColors = /dark=true/.test(window.location.search)
     window.dt = /dt=true/.test(window.location.search)
     document.documentElement.classList.add(window.dt ? 'disableTransparent' : 'transparent')

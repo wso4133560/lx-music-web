@@ -36,7 +36,12 @@ export const getUserLists = async() => {
  * @param data
  */
 export const createUserList = async(data: LX.List.ListActionAdd) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    for (const list of data.listInfos) {
+      userListCreate({ ...list, position: data.position })
+    }
+    return
+  }
   data.listInfos = data.listInfos.map(info => toRaw(info))
   await rendererInvoke<LX.List.ListActionAdd>(PLAYER_EVENT_NAME.list_add, data)
 }
@@ -46,7 +51,10 @@ export const createUserList = async(data: LX.List.ListActionAdd) => {
  * @param data
  */
 export const removeUserList = async(data: LX.List.ListActionRemove) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    userListsRemove(data)
+    return
+  }
   await rendererInvoke<LX.List.ListActionRemove>(PLAYER_EVENT_NAME.list_remove, data)
 }
 
@@ -55,7 +63,10 @@ export const removeUserList = async(data: LX.List.ListActionRemove) => {
  * @param data
  */
 export const updateUserList = async(data: LX.List.ListActionUpdate) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    userListsUpdate(data)
+    return
+  }
   data = data.map(info => toRaw(info))
   await rendererInvoke<LX.List.ListActionUpdate>(PLAYER_EVENT_NAME.list_update, data)
 }
@@ -65,7 +76,10 @@ export const updateUserList = async(data: LX.List.ListActionUpdate) => {
  * @param data
  */
 export const updateUserListPosition = async(data: LX.List.ListActionUpdatePosition) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    userListsUpdatePosition(data.position, data.ids)
+    return
+  }
   await rendererInvoke<LX.List.ListActionUpdatePosition>(PLAYER_EVENT_NAME.list_update_position, data)
 }
 
@@ -86,7 +100,10 @@ export const getListMusics = async(listId: string | null): Promise<LX.Music.Musi
  * @param data
  */
 export const addListMusics = async(data: LX.List.ListActionMusicAdd) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    listMusicAdd(data.id, data.musicInfos, data.addMusicLocationType)
+    return
+  }
   await rendererInvoke<LX.List.ListActionMusicAdd>(PLAYER_EVENT_NAME.list_music_add, data)
 }
 
@@ -95,7 +112,10 @@ export const addListMusics = async(data: LX.List.ListActionMusicAdd) => {
  * @param data
  */
 export const moveListMusics = async(data: LX.List.ListActionMusicMove) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    listMusicMove(data.fromId, data.toId, data.musicInfos, data.addMusicLocationType)
+    return
+  }
   await rendererInvoke<LX.List.ListActionMusicMove>(PLAYER_EVENT_NAME.list_music_move, data)
 }
 
@@ -104,7 +124,10 @@ export const moveListMusics = async(data: LX.List.ListActionMusicMove) => {
  * @param data
  */
 export const removeListMusics = async(data: LX.List.ListActionMusicRemove) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    listMusicRemove(data.listId, data.ids)
+    return
+  }
   await rendererInvoke<LX.List.ListActionMusicRemove>(PLAYER_EVENT_NAME.list_music_remove, data)
 }
 
@@ -113,7 +136,10 @@ export const removeListMusics = async(data: LX.List.ListActionMusicRemove) => {
  * @param data
  */
 export const updateListMusics = async(data: LX.List.ListActionMusicUpdate) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    listMusicUpdateInfo(data)
+    return
+  }
   await rendererInvoke<LX.List.ListActionMusicUpdate>(PLAYER_EVENT_NAME.list_music_update, data)
 }
 
@@ -122,7 +148,10 @@ export const updateListMusics = async(data: LX.List.ListActionMusicUpdate) => {
  * @param data
  */
 export const updateListMusicsPosition = async(data: LX.List.ListActionMusicUpdatePosition) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    await listMusicUpdatePosition(data.listId, data.position, data.ids)
+    return
+  }
   await rendererInvoke<LX.List.ListActionMusicUpdatePosition>(PLAYER_EVENT_NAME.list_music_update_position, data)
 }
 
@@ -131,7 +160,10 @@ export const updateListMusicsPosition = async(data: LX.List.ListActionMusicUpdat
  * @param data
  */
 export const overwriteListMusics = async(data: LX.List.ListActionMusicOverwrite) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    listMusicOverwrite(data.listId, data.musicInfos)
+    return
+  }
   await rendererInvoke<LX.List.ListActionMusicOverwrite>(PLAYER_EVENT_NAME.list_music_overwrite, data)
 }
 
@@ -140,7 +172,10 @@ export const overwriteListMusics = async(data: LX.List.ListActionMusicOverwrite)
  * @param ids
  */
 export const clearListMusics = async(ids: LX.List.ListActionMusicClear) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    listMusicClear(ids)
+    return
+  }
   await rendererInvoke<LX.List.ListActionMusicClear>(PLAYER_EVENT_NAME.list_music_clear, ids)
 }
 
@@ -149,7 +184,10 @@ export const clearListMusics = async(ids: LX.List.ListActionMusicClear) => {
  * @param data
  */
 export const overwriteListFull = async(data: LX.List.ListActionDataOverwrite) => {
-  if (isWebRuntime) return
+  if (isWebRuntime) {
+    listDataOverwrite(data)
+    return
+  }
   data.defaultList = toRaw(data.defaultList)
   data.loveList = toRaw(data.loveList)
   if (data.tempList) {
@@ -171,7 +209,7 @@ export const overwriteListFull = async(data: LX.List.ListActionDataOverwrite) =>
  * @param musicInfoId
  */
 export const checkListExistMusic = async(listId: string, musicInfoId: string): Promise<boolean> => {
-  if (isWebRuntime) return false
+  if (isWebRuntime) return !!allMusicList.get(listId)?.some(musicInfo => musicInfo.id == musicInfoId)
   return rendererInvoke<LX.List.ListActionCheckMusicExistList, boolean>(PLAYER_EVENT_NAME.list_music_check_exist, { listId, musicInfoId })
 }
 
@@ -180,7 +218,11 @@ export const checkListExistMusic = async(listId: string, musicInfoId: string): P
  * @param musicInfoId
  */
 export const getMusicExistListIds = async(musicInfoId: string): Promise<string[]> => {
-  if (isWebRuntime) return []
+  if (isWebRuntime) {
+    return Array.from(allMusicList.entries())
+      .filter(([, list]) => list.some(musicInfo => musicInfo.id == musicInfoId))
+      .map(([id]) => id)
+  }
   return rendererInvoke<string, string[]>(PLAYER_EVENT_NAME.list_music_get_list_ids, musicInfoId)
 }
 

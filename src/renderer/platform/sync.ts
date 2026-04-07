@@ -41,7 +41,12 @@ const normalizeClientStatus = (status?: Partial<LX.Sync.ClientStatus> | null): L
 
 export const getSyncSnapshot = async(): Promise<SyncSnapshot> => {
   if (isWebRuntime) {
-    const snapshot = await requestJson<Partial<SyncSnapshot>>('/api/sync/status')
+    let snapshot: Partial<SyncSnapshot> = {}
+    try {
+      snapshot = await requestJson<Partial<SyncSnapshot>>('/api/sync/status')
+    } catch {
+      snapshot = {}
+    }
     return {
       server: normalizeServerStatus(snapshot.server),
       client: normalizeClientStatus(snapshot.client),
@@ -61,10 +66,12 @@ export const getSyncSnapshot = async(): Promise<SyncSnapshot> => {
 
 export const requestSyncAction = async(action: LX.Sync.SyncServiceActions) => {
   if (isWebRuntime) {
-    await requestJson<void>('/api/sync/action', {
-      method: 'POST',
-      body: action,
-    })
+    try {
+      await requestJson<void>('/api/sync/action', {
+        method: 'POST',
+        body: action,
+      })
+    } catch {}
     return
   }
   await sendDesktopSyncAction(action)
@@ -77,16 +84,22 @@ export const subscribeSyncActions = (listener: LX.IpcRendererEventListenerParams
 
 export const listSyncServerDevices = async() => {
   if (isWebRuntime) {
-    return requestJson<LX.Sync.ServerDevices>('/api/sync/server/devices')
+    try {
+      return await requestJson<LX.Sync.ServerDevices>('/api/sync/server/devices')
+    } catch {
+      return []
+    }
   }
   return getDesktopSyncServerDevices()
 }
 
 export const removeSyncServerDevice = async(clientId: string) => {
   if (isWebRuntime) {
-    await requestJson<void>(`/api/sync/server/devices/${encodeURIComponent(clientId)}`, {
-      method: 'DELETE',
-    })
+    try {
+      await requestJson<void>(`/api/sync/server/devices/${encodeURIComponent(clientId)}`, {
+        method: 'DELETE',
+      })
+    } catch {}
     return
   }
   await removeDesktopSyncServerDevice(clientId)

@@ -6,19 +6,14 @@ const sources: Array<{
   disabled: boolean
   supportQualitys: Partial<Record<LX.OnlineSource, LX.Quality[]>>
 }> = [
-  // {
-  //   id: 'test',
-  //   name: '测试接口',
-  //   disabled: false,
-  //   supportQualitys: {
-  //     kw: ['128k'],
-  //     kg: ['128k'],
-  //     tx: ['128k'],
-  //     wy: ['128k'],
-  //     mg: ['128k'],
-  //     // bd: ['128k'],
-  //   },
-  // },
+  {
+    id: 'test',
+    name: '测试接口',
+    disabled: false,
+    supportQualitys: {
+      mg: ['128k', '320k', 'flac', 'flac24bit'],
+    },
+  },
   // {
   //   id: 'temp',
   //   name: '临时接口',

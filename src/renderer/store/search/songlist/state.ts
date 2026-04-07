@@ -1,5 +1,6 @@
 import { reactive, markRaw } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
+import { shouldExposeAggregatedSource } from '@renderer/platform/sources'
 
 // import { deduplicationList } from '@common/utils/renderer'
 
@@ -45,4 +46,4 @@ for (const source of music.sources) {
   })
   maxPages[source.id as LX.OnlineSource] = 0
 }
-sources.push('all')
+if (shouldExposeAggregatedSource(sources.length)) sources.push('all')

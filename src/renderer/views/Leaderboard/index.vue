@@ -20,9 +20,11 @@ import MusicList from './MusicList/index.vue'
 import { sources } from '@renderer/store/leaderboard/state'
 import { sourceNames } from '@renderer/store'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
+import { getDefaultOnlineSource, resolveAvailableSource } from '@renderer/platform/sources'
 
 
-const source = ref('')
+const defaultSource = getDefaultOnlineSource(sources)
+const source = ref(defaultSource)
 const boardId = ref(null)
 
 const verifyQueryParams = async function(to, from, next) {
@@ -35,16 +37,26 @@ const verifyQueryParams = async function(to, from, next) {
       _source = setting.source
       _boardId = setting.boardId
     }
+    _source = resolveAvailableSource(_source, sources, defaultSource)
+    if (_boardId && !_boardId.startsWith(`${_source}__`)) _boardId = undefined
     next({
       path: to.path,
       query: { ...to.query, source: _source, boardId: _boardId },
     })
     return
   }
+  const nextSource = resolveAvailableSource(_source, sources, defaultSource)
+  if (nextSource != _source || (_boardId && !_boardId.startsWith(`${nextSource}__`))) {
+    next({
+      path: to.path,
+      query: { ...to.query, source: nextSource, boardId: _boardId?.startsWith(`${nextSource}__`) ? _boardId : undefined },
+    })
+    return
+  }
   next()
-  source.value = _source
+  source.value = nextSource
   boardId.value = _boardId
-  void setLeaderboardSetting({ source: _source, boardId: _boardId })
+  void setLeaderboardSetting({ source: nextSource, boardId: _boardId })
 }
 
 

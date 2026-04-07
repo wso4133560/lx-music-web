@@ -16,6 +16,8 @@ import {
 } from '@renderer/utils/ipc'
 import { throttle } from '@common/utils'
 import { type DEFAULT_SETTING, DEFAULT_SETTING as defaultSetting, LIST_IDS } from '@common/constants'
+import { isWebRuntime } from '@renderer/platform/runtime'
+import { defaultOnlineSource } from '@renderer/platform/sources'
 import { dateFormat } from './index'
 import { setUpdateTime } from '@renderer/store/list/action'
 
@@ -26,6 +28,32 @@ let listUpdateInfo: LX.List.ListUpdateInfo
 let searchSetting: typeof DEFAULT_SETTING['search']
 let songListSetting: typeof DEFAULT_SETTING['songList']
 let leaderboardSetting: typeof DEFAULT_SETTING['leaderboard']
+
+const sanitizeWebOnlineSource = (source?: string | null) => source == defaultOnlineSource ? defaultOnlineSource : defaultOnlineSource
+const sanitizeSearchSettingValue = (setting: typeof DEFAULT_SETTING['search']) => {
+  if (!isWebRuntime) return { ...setting }
+  return {
+    ...setting,
+    source: sanitizeWebOnlineSource(setting.source),
+    temp_source: sanitizeWebOnlineSource(setting.temp_source),
+  }
+}
+const sanitizeSongListSettingValue = (setting: typeof DEFAULT_SETTING['songList']) => {
+  if (!isWebRuntime) return { ...setting }
+  return {
+    ...setting,
+    source: sanitizeWebOnlineSource(setting.source),
+  }
+}
+const sanitizeLeaderboardSettingValue = (setting: typeof DEFAULT_SETTING['leaderboard']) => {
+  if (!isWebRuntime) return { ...setting }
+  const source = sanitizeWebOnlineSource(setting.source)
+  return {
+    ...setting,
+    source,
+    boardId: typeof setting.boardId == 'string' && setting.boardId.startsWith(`${source}__`) ? setting.boardId : '',
+  }
+}
 
 const saveListPositionThrottle = throttle(() => {
   saveListPositionInfoFromData(listPosition)
@@ -146,11 +174,12 @@ export const overwriteListUpdateInfo = async(ids: string[]) => {
 
 export const getSearchSetting = async() => {
   // eslint-disable-next-line require-atomic-updates
-  searchSetting ??= await getSearchSettingFromData() ?? { ...defaultSetting.search }
+  searchSetting ??= sanitizeSearchSettingValue(await getSearchSettingFromData() ?? { ...defaultSetting.search })
   return { ...searchSetting }
 }
 export const setSearchSetting = async(setting: Partial<typeof DEFAULT_SETTING['search']>) => {
   if (!searchSetting) await getSearchSetting()
+  setting = sanitizeSearchSettingValue({ ...searchSetting, ...setting })
   let requiredSave = false
   if (setting.source && searchSetting.source != setting.source) requiredSave = true
   if (setting.type && searchSetting.type != setting.type) requiredSave = true
@@ -163,23 +192,23 @@ export const setSearchSetting = async(setting: Partial<typeof DEFAULT_SETTING['s
 
 export const getSongListSetting = async() => {
   // eslint-disable-next-line require-atomic-updates
-  songListSetting ??= await getSongListSettingFromData() ?? { ...defaultSetting.songList }
+  songListSetting ??= sanitizeSongListSettingValue(await getSongListSettingFromData() ?? { ...defaultSetting.songList })
   return { ...songListSetting }
 }
 export const setSongListSetting = async(setting: Partial<typeof DEFAULT_SETTING['songList']>) => {
   if (!songListSetting) await getSongListSetting()
-  songListSetting = Object.assign(songListSetting, setting)
+  songListSetting = Object.assign(songListSetting, sanitizeSongListSettingValue({ ...songListSetting, ...setting }))
   saveSongListSettingThrottle()
 }
 
 export const getLeaderboardSetting = async() => {
   // eslint-disable-next-line require-atomic-updates
-  leaderboardSetting ??= await getLeaderboardSettingFromData() ?? { ...defaultSetting.leaderboard }
+  leaderboardSetting ??= sanitizeLeaderboardSettingValue(await getLeaderboardSettingFromData() ?? { ...defaultSetting.leaderboard })
   return { ...leaderboardSetting }
 }
 export const setLeaderboardSetting = async(setting: Partial<typeof DEFAULT_SETTING['leaderboard']>) => {
   if (!leaderboardSetting) await getLeaderboardSetting()
-  leaderboardSetting = Object.assign(leaderboardSetting, setting)
+  leaderboardSetting = Object.assign(leaderboardSetting, sanitizeLeaderboardSettingValue({ ...leaderboardSetting, ...setting }))
   saveLeaderboardSettingThrottle()
 }
 

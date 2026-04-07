@@ -1,10 +1,10 @@
 import { reactive, computed } from '@common/utils/vueTools'
 import defaultSetting from '@common/defaultSetting'
 import { updateSetting as saveSetting } from '@renderer/utils/ipc'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 export const appSetting = window.lxData.appSetting = reactive<LX.AppSetting>({ ...defaultSetting })
+if (isWebRuntime && appSetting['common.apiSource'] == 'temp') appSetting['common.apiSource'] = 'test'
 
 export const isShowAnimation = computed(() => {
   return appSetting['common.isShowAnimation']
@@ -16,6 +16,7 @@ export const initSetting = (newSetting: LX.AppSetting) => {
 }
 
 export const mergeSetting = (newSetting: Partial<LX.AppSetting>) => {
+  if (isWebRuntime && newSetting['common.apiSource'] == 'temp') newSetting['common.apiSource'] = 'test'
   for (const [key, value] of Object.entries(newSetting)) {
     // @ts-expect-error
     appSetting[key] = value
@@ -24,7 +25,6 @@ export const mergeSetting = (newSetting: Partial<LX.AppSetting>) => {
 
 export const updateSetting = window.lxData.updateSetting = (setting: Partial<LX.AppSetting>) => {
   mergeSetting(setting)
-  if (isWebRuntime) return
   void saveSetting(setting)
 }
 

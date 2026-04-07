@@ -20,7 +20,7 @@ export default ({ selectedList, props, removeAllSelect, emit }: {
 
   const handlePlayMusic = async(index: number, single: boolean) => {
     let targetSong = props.list[index]
-    const defaultListMusics = await getListMusics(defaultList.id)
+    let defaultListMusics = await getListMusics(defaultList.id)
     if (selectedList.value.length && !single) {
       await addListMusics(defaultList.id, [...selectedList.value])
       removeAllSelect()
@@ -28,9 +28,11 @@ export default ({ selectedList, props, removeAllSelect, emit }: {
       await addListMusics(defaultList.id, [targetSong])
     }
     let targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id)
-    if (targetIndex > -1) {
-      playList(defaultList.id, targetIndex)
+    if (targetIndex < 0) {
+      defaultListMusics = await getListMusics(defaultList.id)
+      targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id)
     }
+    if (targetIndex > -1) playList(defaultList.id, targetIndex)
   }
 
   const handlePlayMusicLater = (index: number, single: boolean) => {

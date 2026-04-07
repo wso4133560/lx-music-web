@@ -7,6 +7,7 @@ import { onBeforeUnmount } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
 import { playMusicInfo } from '@renderer/store/player/state'
 import { initDislikeInfo, registerRemoteDislikeAction } from '@renderer/core/dislikeList'
+import { setUserApi } from '@renderer/core/apiSource'
 
 const isWebRuntime = !(window as any).require?.('electron')
 
@@ -44,6 +45,10 @@ export default () => {
       await Promise.all([
         initUserApi(), // 自定义API
       ]).catch(err => {
+        log.error(err)
+      })
+    } else {
+      await setUserApi(appSetting['common.apiSource']).catch(err => {
         log.error(err)
       })
     }

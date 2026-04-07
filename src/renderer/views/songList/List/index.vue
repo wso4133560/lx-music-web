@@ -23,8 +23,10 @@ import ListView from './ListView.vue'
 import { sources, listInfo, isVisibleListDetail } from '@renderer/store/songList/state'
 import { sourceNames } from '@renderer/store'
 import { useRoute, useRouter } from '@common/utils/vueRouter'
+import { getDefaultOnlineSource, resolveAvailableSource } from '@renderer/platform/sources'
 
-const source = ref<LX.OnlineSource>('kw')
+const defaultSource = getDefaultOnlineSource(sources)
+const source = ref<LX.OnlineSource>(defaultSource)
 const tagId = ref<string>('')
 const sortId = ref<string>('')
 const page = ref<number>(1)
@@ -59,6 +61,7 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
       _sortId = setting.sortId
       _page = '1'
     }
+    _source = resolveAvailableSource(_source, sources, defaultSource)
 
     next({
       path: to.path,
@@ -66,12 +69,20 @@ const verifyQueryParams = async function(this: any, to: { query: Query, path: st
     })
     return
   }
+  const nextSource = resolveAvailableSource(_source, sources, defaultSource)
+  if (nextSource != _source) {
+    next({
+      path: to.path,
+      query: { ...to.query, source: nextSource, tagId: _tagId, sortId: _sortId, page: _page },
+    })
+    return
+  }
   next()
-  source.value = _source as LX.OnlineSource
+  source.value = nextSource
   tagId.value = _tagId ?? ''
   sortId.value = _sortId ?? ''
   page.value = _page ? parseInt(_page) : 1
-  void setSongListSetting({ source: _source, tagId: _tagId, sortId: _sortId })
+  void setSongListSetting({ source: nextSource, tagId: _tagId, sortId: _sortId })
 }
 
 

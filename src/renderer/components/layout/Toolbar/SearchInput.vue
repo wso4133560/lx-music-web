@@ -15,6 +15,8 @@ import { appSetting } from '@renderer/store/setting'
 import { searchText as _searchText } from '@renderer/store/search/state'
 import { setSearchText } from '@renderer/store/search/action'
 import { getSearchSetting } from '@renderer/utils/data'
+import { getDefaultOnlineSource } from '@renderer/platform/sources'
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 export default {
   setup() {
@@ -26,6 +28,7 @@ export default {
 
     const route = useRoute()
     const router = useRouter()
+    const defaultSource = getDefaultOnlineSource(music.sources.map(source => source.id))
 
     watch(() => route.name, (newValue, oldValue) => {
       if (oldValue == 'Search' && newValue != 'SongListDetail') {
@@ -46,13 +49,22 @@ export default {
 
 
     const tipSearch = debounce(async() => {
+      if (isWebRuntime) {
+        tipList.value = []
+        return
+      }
       if (searchText.value === '' && prevTempSearchSource) {
         tipList.value = []
-        music[prevTempSearchSource].tipSearch.cancelTipSearch()
+        music[prevTempSearchSource]?.tipSearch?.cancelTipSearch()
         return
       }
       const { temp_source } = await getSearchSetting()
-      prevTempSearchSource ||= temp_source
+      prevTempSearchSource = music[prevTempSearchSource]?.tipSearch ? prevTempSearchSource : ''
+      prevTempSearchSource ||= music[temp_source]?.tipSearch ? temp_source : defaultSource
+      if (!music[prevTempSearchSource]?.tipSearch) {
+        tipList.value = []
+        return
+      }
       music[prevTempSearchSource].tipSearch.search(searchText.value).then(list => {
         tipList.value = list
       }).catch(() => {})

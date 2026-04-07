@@ -5,10 +5,11 @@ import { apiSource, userApi } from '@renderer/store'
 // import api_test_tx from './tx/api-test'
 // import api_test_kg from './kg/api-test'
 // import api_test_kw from './kw/api-test'
-// import api_test_mg from './mg/api-test'
+import api_test_mg from './mg/api-test'
 // import api_test_wy from './wy/api-test'
 
 const allApi = {
+  test_mg: api_test_mg,
   // temp_kw: api_temp_kw,
   // // test_bd: api_test_bd,
   // test_tx: api_test_tx,

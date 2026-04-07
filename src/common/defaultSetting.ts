@@ -1,8 +1,25 @@
-import path from 'node:path'
-import os from 'node:os'
+const detectPlatform = (): NodeJS.Platform => {
+  if (typeof process != 'undefined' && process.platform) return process.platform
+  if (typeof navigator == 'undefined') return 'linux'
+  const userAgent = navigator.userAgent.toLowerCase()
+  if (userAgent.includes('windows')) return 'win32'
+  if (userAgent.includes('mac os')) return 'darwin'
+  return 'linux'
+}
 
-const isMac = process.platform == 'darwin'
-const isWin = process.platform == 'win32'
+const platform = detectPlatform()
+const isMac = platform == 'darwin'
+const isWin = platform == 'win32'
+const getDefaultDownloadPath = () => {
+  if (typeof process != 'undefined' && process.platform) {
+    try {
+      const path = require('node:path')
+      const os = require('node:os')
+      return path.join(os.homedir(), 'Desktop')
+    } catch {}
+  }
+  return 'Downloads'
+}
 
 const defaultSetting: LX.AppSetting = {
   version: '2.1.0',
@@ -111,7 +128,7 @@ const defaultSetting: LX.AppSetting = {
 
   'download.enable': false,
   'download.isSavePathGroupByListName': false,
-  'download.savePath': path.join(os.homedir(), 'Desktop'),
+  'download.savePath': getDefaultDownloadPath(),
   'download.fileName': '歌名 - 歌手',
   'download.maxDownloadNum': 3,
   'download.skipExistFile': true,
@@ -168,4 +185,3 @@ if (new Date().getMonth() < 2) {
 
 
 export default defaultSetting
-

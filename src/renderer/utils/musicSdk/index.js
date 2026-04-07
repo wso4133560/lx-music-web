@@ -6,10 +6,10 @@ import mg from './mg/index'
 import bd from './bd/index'
 import xm from './xm'
 import { supportQuality } from './api-source'
+import { filterRuntimeOnlineSources } from '@renderer/platform/sources'
 
 
-const sources = {
-  sources: [
+const allSources = [
     {
       name: '酷我音乐',
       id: 'kw',
@@ -38,7 +38,10 @@ const sources = {
     //   name: '百度音乐',
     //   id: 'bd',
     // },
-  ],
+]
+
+const sources = {
+  sources: filterRuntimeOnlineSources(allSources),
   kw,
   kg,
   tx,

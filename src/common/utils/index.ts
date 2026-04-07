@@ -1,12 +1,53 @@
-import log from 'electron-log/node'
+const detectBrowserPlatform = (): NodeJS.Platform => {
+  if (typeof navigator == 'undefined') return 'linux'
+  const userAgent = navigator.userAgent.toLowerCase()
+  if (userAgent.includes('windows')) return 'win32'
+  if (userAgent.includes('mac os')) return 'darwin'
+  return 'linux'
+}
 
+const runtimeProcess = (() => {
+  if (typeof globalThis == 'undefined') return { env: {}, platform: 'linux' as NodeJS.Platform }
+  return ((globalThis as any).process ??= {
+    env: {},
+    versions: {},
+    platform: detectBrowserPlatform(),
+    arch: '',
+  })
+})()
 
-export const isLinux = process.platform == 'linux'
-export const isWin = process.platform == 'win32'
-export const isMac = process.platform == 'darwin'
-export const isProd = process.env.NODE_ENV == 'production'
+const consoleLog = {
+  error: console.error.bind(console),
+  warn: console.warn.bind(console),
+  info: console.info.bind(console),
+  log: console.log.bind(console),
+  debug: console.debug.bind(console),
+}
 
-export const getPlatform = (platform: NodeJS.Platform = process.platform) => {
+const getRuntimeRequire = () => {
+  const webpackRequire = (globalThis as any).__non_webpack_require__
+  if (typeof webpackRequire == 'function') return webpackRequire
+  const windowRequire = (globalThis as any).window?.require
+  if (typeof windowRequire == 'function') return windowRequire
+  return null
+}
+
+const resolveLog = () => {
+  const runtimeRequire = getRuntimeRequire()
+  if (!runtimeRequire) return consoleLog
+  try {
+    return runtimeRequire('electron-log/node')
+  } catch {
+    return consoleLog
+  }
+}
+
+export const isLinux = runtimeProcess.platform == 'linux'
+export const isWin = runtimeProcess.platform == 'win32'
+export const isMac = runtimeProcess.platform == 'darwin'
+export const isProd = runtimeProcess.env.NODE_ENV == 'production'
+
+export const getPlatform = (platform: NodeJS.Platform = runtimeProcess.platform) => {
   switch (platform) {
     case 'win32': return 'windows'
     case 'darwin': return 'mac'
@@ -36,7 +77,9 @@ export function compareVer(currentVer: string, targetVer: string): -1 | 0 | 1 {
 
 
 export {
-  log,
+  resolveLog as _resolveLog,
 }
+
+export const log = resolveLog()
 
 export * from './common'

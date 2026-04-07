@@ -1,5 +1,6 @@
 import { reactive, markRaw, ref, shallowReactive } from '@common/utils/vueTools'
 import music from '@renderer/utils/musicSdk'
+import { getDefaultOnlineSource } from '@renderer/platform/sources'
 
 export interface SortInfo {
   name: string
@@ -15,6 +16,8 @@ for (const source of music.sources) {
   sources.push(source.id as LX.OnlineSource)
   sortList[source.id as LX.OnlineSource] = songList.sortList as SortInfo[]
 }
+
+const defaultSource = getDefaultOnlineSource(sources as LX.OnlineSource[])
 
 export interface TagInfoItem<T extends LX.OnlineSource = LX.OnlineSource> {
   parent_id: string
@@ -88,7 +91,7 @@ export const listInfo = reactive<ListInfo>({
   limit: 30,
   key: null,
   noItemLabel: '',
-  source: 'kw',
+  source: defaultSource,
   tagId: '',
   sortId: '',
 })
@@ -101,7 +104,7 @@ export const listDetailInfo = reactive<ListDetailInfo>({
   page: 1,
   limit: 30,
   key: null,
-  source: 'kw',
+  source: defaultSource,
   info: {},
   noItemLabel: '',
 })
@@ -115,7 +118,7 @@ export const selectListInfo = markRaw<ListInfoItem>({
   img: '',
   // grade: basic.favorcnt / 10,
   desc: '',
-  source: 'kw',
+  source: defaultSource,
 })
 
 export const isVisibleListDetail = ref(false)

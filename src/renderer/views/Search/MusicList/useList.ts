@@ -40,11 +40,15 @@ export default () => {
 
     if (!assertApiSupport(targetSong.source)) return
 
-    const defaultListMusics = await getListMusics(LIST_IDS.DEFAULT)
+    let defaultListMusics = await getListMusics(LIST_IDS.DEFAULT)
 
     await addListMusics(LIST_IDS.DEFAULT, [targetSong])
 
     let targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id)
+    if (targetIndex < 0) {
+      defaultListMusics = await getListMusics(LIST_IDS.DEFAULT)
+      targetIndex = defaultListMusics.findIndex(s => s.id === targetSong.id)
+    }
     if (targetIndex > -1) playList(LIST_IDS.DEFAULT, targetIndex)
   }
 

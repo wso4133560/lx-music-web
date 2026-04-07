@@ -119,6 +119,7 @@ export const buildLyricInfo = async(lyricInfo: MakeOptional<LX.Player.LyricInfo,
 
 export const getCachedLyricInfo = async(musicInfo: LX.Music.MusicInfo): Promise<LX.Player.LyricInfo | null> => {
   const lrcInfo = await getCachedPlayerLyric(musicInfo)
+  if (!lrcInfo?.lyric) return null
   // lrcInfo = {} as unknown as LX.Player.LyricInfo
   if (existTimeExp.test(lrcInfo.lyric)) {
     if (lrcInfo.tlyric != null) {

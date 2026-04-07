@@ -17,6 +17,7 @@ import { useRoute, useRouter } from '@common/utils/vueRouter'
 import { searchText } from '@renderer/store/search/state'
 import { getSearchSetting, setSearchSetting } from '@renderer/utils/data'
 import { sources as _sources } from '@renderer/store/search/music'
+import { getDefaultOnlineSource, resolveAvailableSource } from '@renderer/platform/sources'
 
 import MusicList from './MusicList/index.vue'
 import SongListList from './SongListList/index.vue'
@@ -24,7 +25,9 @@ import BlankView from './components/BlankView.vue'
 import { computed, ref } from '@common/utils/vueTools'
 import { sourceNames } from '@renderer/store'
 
-const source = ref('kw')
+const availableSources = _sources
+const defaultSource = getDefaultOnlineSource(availableSources.filter(id => id != 'all'))
+const source = ref(defaultSource)
 const searchType = ref(null)
 const page = ref(1)
 
@@ -37,6 +40,9 @@ const verifyQueryParams = async(to, from, next) => {
     const setting = await getSearchSetting()
     _source ??= setting.source
     _type ??= setting.type
+    _source = _source == 'all' && availableSources.includes('all')
+      ? 'all'
+      : resolveAvailableSource(_source, availableSources.filter(id => id != 'all'), defaultSource)
 
     next({
       path: to.path,
@@ -44,7 +50,17 @@ const verifyQueryParams = async(to, from, next) => {
     })
     return
   }
-  source.value = _source
+  const nextSource = _source == 'all' && availableSources.includes('all')
+    ? 'all'
+    : resolveAvailableSource(_source, availableSources.filter(id => id != 'all'), defaultSource)
+  if (nextSource != _source) {
+    next({
+      path: to.path,
+      query: { ...to.query, source: nextSource, type: _type, page: _page },
+    })
+    return
+  }
+  source.value = nextSource
   searchType.value = _type
 
   if (_page) page.value = parseInt(_page)
@@ -54,7 +70,7 @@ const verifyQueryParams = async(to, from, next) => {
     if (!_page) page.value = 1
   }
   next()
-  void setSearchSetting({ source: _source, type: _type })
+  void setSearchSetting({ source: nextSource, type: _type })
 }
 
 export default {

@@ -1,15 +1,40 @@
-import needle from 'needle'
 // import progress from 'request-progress'
 import { debugRequest } from './env'
 import { requestMsg } from './message'
 import { bHh } from './musicSdk/options'
-import { deflateRaw } from 'zlib'
 import { proxy } from '@renderer/store'
-import { httpOverHttp, httpsOverHttp } from 'tunnel'
 // import fs from 'fs'
 
+const isWebRuntime = !(typeof window != 'undefined' && typeof window.require == 'function' && window.require('electron'))
+
+const getRuntimeRequire = () => {
+  const webpackRequire = globalThis.__non_webpack_require__
+  if (typeof webpackRequire == 'function') return webpackRequire
+  const windowRequire = globalThis.window?.require
+  if (typeof windowRequire == 'function') return windowRequire
+  return null
+}
+
+const getNodeRequestDeps = () => {
+  const runtimeRequire = getRuntimeRequire()
+  if (!runtimeRequire) throw new Error('Node runtime unavailable')
+  return {
+    needle: runtimeRequire('needle'),
+    zlib: runtimeRequire('node:zlib'),
+    tunnel: runtimeRequire('tunnel'),
+  }
+}
+
 const httpsRxp = /^https:/
+const httpUrlRxp = /^https?:\/\//
+export const buildWebProxyUrl = url => {
+  if (!isWebRuntime || !httpUrlRxp.test(url)) return url
+  const currentOrigin = globalThis.window?.location?.origin
+  if (currentOrigin && url.startsWith(currentOrigin)) return url
+  return `/__lx_proxy__?url=${encodeURIComponent(url)}`
+}
 const getRequestAgent = url => {
+  if (isWebRuntime) return undefined
   let options
   if (proxy.enable && proxy.host) {
     options = {
@@ -26,11 +51,15 @@ const getRequestAgent = url => {
       },
     }
   }
-  return options ? (httpsRxp.test(url) ? httpsOverHttp : httpOverHttp)(options) : undefined
+  if (!options) return undefined
+  const { tunnel: { httpOverHttp, httpsOverHttp } } = getNodeRequestDeps()
+  return (httpsRxp.test(url) ? httpsOverHttp : httpOverHttp)(options)
 }
 
 
 const request = (url, options, callback) => {
+  if (isWebRuntime) return browserRequest(url, options, callback)
+
   let data
   if (options.body) {
     data = options.body
@@ -45,6 +74,7 @@ const request = (url, options, callback) => {
   }
   options.response_timeout = options.timeout
 
+  const { needle } = getNodeRequestDeps()
   return needle.request(options.method || 'get', url, data, options, (err, resp, body) => {
     if (!err) {
       body = resp.body = resp.raw.toString()
@@ -55,6 +85,82 @@ const request = (url, options, callback) => {
     }
     callback(err, resp, body)
   }).request
+}
+
+const normalizeBrowserError = (error, isTimeout) => {
+  if (isTimeout) {
+    const timeoutError = new Error(requestMsg.timeout)
+    timeoutError.code = 'ETIMEDOUT'
+    return timeoutError
+  }
+  if (error?.name == 'AbortError') return new Error(requestMsg.cancelRequest)
+  return error
+}
+
+const browserRequest = (url, options, callback) => {
+  const controller = new AbortController()
+  const headers = new Headers(options.headers || {})
+  const requestUrl = buildWebProxyUrl(url)
+  let body = options.body ?? options.data
+  if (options.form) {
+    body = new URLSearchParams(options.form).toString()
+    if (!headers.has('content-type')) headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
+  } else if (options.formData) {
+    const formData = new FormData()
+    for (const [key, value] of Object.entries(options.formData)) {
+      formData.append(key, value)
+    }
+    body = formData
+  }
+
+  let isTimeout = false
+  const timeoutId = options.timeout > 0
+    ? setTimeout(() => {
+      isTimeout = true
+      controller.abort()
+    }, options.timeout)
+    : null
+
+  if (requestUrl != url) {
+    headers.set('x-lx-proxy-headers', encodeURIComponent(JSON.stringify(Array.from(headers.entries()))))
+  }
+
+  fetch(requestUrl, {
+    method: (options.method || 'get').toUpperCase(),
+    headers,
+    body,
+    redirect: 'follow',
+    signal: controller.signal,
+  }).then(async(response) => {
+    const raw = await response.text()
+    let responseBody = raw
+    if (options.json !== false) {
+      try {
+        responseBody = JSON.parse(raw)
+      } catch {}
+    }
+    const responseHeaders = {}
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value
+    })
+    callback(null, {
+      body: responseBody,
+      raw,
+      headers: responseHeaders,
+      statusCode: response.status,
+      statusMessage: response.statusText,
+    }, responseBody)
+  }).catch(error => {
+    callback(normalizeBrowserError(error, isTimeout), null)
+  }).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId)
+  })
+
+  return {
+    abort() {
+      controller.abort()
+    },
+  }
 }
 
 
@@ -267,11 +373,30 @@ export const http_jsonp = (url, options, callback) => {
   })
 }
 
+const encodeText = text => {
+  if (typeof TextEncoder != 'undefined') return new TextEncoder().encode(text)
+  return Uint8Array.from(Buffer.from(text))
+}
+
+const bytesToHex = bytes => Array.from(bytes).map(byte => byte.toString(16).padStart(2, '0')).join('')
+
 const handleDeflateRaw = data => new Promise((resolve, reject) => {
-  deflateRaw(data, (err, buf) => {
-    if (err) return reject(err)
-    resolve(buf)
-  })
+  if (!isWebRuntime) {
+    const { zlib: { deflateRaw } } = getNodeRequestDeps()
+    deflateRaw(data, (err, buf) => {
+      if (err) return reject(err)
+      resolve(buf)
+    })
+    return
+  }
+  if (typeof CompressionStream == 'undefined') {
+    resolve(encodeText(data))
+    return
+  }
+  const stream = new Blob([data]).stream().pipeThrough(new CompressionStream('deflate'))
+  new Response(stream).arrayBuffer()
+    .then(buffer => resolve(new Uint8Array(buffer)))
+    .catch(reject)
 })
 
 const regx = /(?:\d\w)+/g
@@ -287,12 +412,16 @@ const fetchData = async(url, method, {
   headers = Object.assign({}, headers)
   if (headers[bHh]) {
     const path = url.replace(/^https?:\/\/[\w.:]+\//, '/')
-    let s = Buffer.from(bHh, 'hex').toString()
+    let s = isWebRuntime ? decodeURIComponent(bHh.replace(/(..)/g, '%$1')) : Buffer.from(bHh, 'hex').toString()
     s = s.replace(s.substr(-1), '')
-    s = Buffer.from(s, 'base64').toString()
-    let v = process.versions.app.split('-')[0].split('.').map(n => n.length < 3 ? n.padStart(3, '0') : n).join('')
-    let v2 = process.versions.app.split('-')[1] || ''
-    headers[s] = !s || `${(await handleDeflateRaw(Buffer.from(JSON.stringify(`${path}${v}`.match(regx), null, 1).concat(v)).toString('base64'))).toString('hex')}&${parseInt(v)}${v2}`
+    s = isWebRuntime ? atob(s) : Buffer.from(s, 'base64').toString()
+    const appVersion = globalThis.process?.versions?.app || '0.0.0'
+    let v = appVersion.split('-')[0].split('.').map(n => n.length < 3 ? n.padStart(3, '0') : n).join('')
+    let v2 = appVersion.split('-')[1] || ''
+    const rawValue = JSON.stringify(`${path}${v}`.match(regx), null, 1).concat(v)
+    const compressed = await handleDeflateRaw(isWebRuntime ? btoa(rawValue) : Buffer.from(rawValue).toString('base64'))
+    const encodedValue = typeof compressed?.toString == 'function' && !isWebRuntime ? compressed.toString('hex') : bytesToHex(compressed)
+    headers[s] = !s || `${encodedValue}&${parseInt(v)}${v2}`
     delete headers[bHh]
   }
   return request(url, {
