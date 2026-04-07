@@ -10,8 +10,7 @@ import usePlayer from './usePlayer'
 import useSettingSync from './useSettingSync'
 import { useRouter } from '@common/utils/vueRouter'
 import handleListAutoUpdate from './listAutoUpdate'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 export default () => {
   proxy.enable = appSetting['network.proxy.enable']
@@ -51,10 +50,10 @@ export default () => {
       useUpdate()
     }
 
-    const safeEnvParams = envParams ?? {
+    const safeEnvParams: LX.EnvParams = envParams ?? {
       cmdParams: {},
       deeplink: null,
-    } as LX.EnvParams
+    }
     const envProxy = safeEnvParams.cmdParams['proxy-server']
     if (envProxy && typeof envProxy == 'string') {
       const [host, port = ''] = envProxy.split(':')

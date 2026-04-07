@@ -8,14 +8,20 @@ import { setMediaDeviceId } from '@renderer/plugins/player'
 import { isPlay } from '@renderer/store/player/state'
 import { appSetting, saveMediaDeviceId } from '@renderer/store/setting'
 
+const mediaDevices = navigator.mediaDevices
+const isMediaDeviceApiSupported = !!mediaDevices?.enumerateDevices
+
 const getDevices = async() => {
-  const devices = await navigator.mediaDevices.enumerateDevices()
+  if (!isMediaDeviceApiSupported) return []
+  const devices = await mediaDevices.enumerateDevices()
   return devices.filter(({ kind }) => kind == 'audiooutput')
 }
 
 let isShowingTipAlert = false
 
 export default () => {
+  if (!isMediaDeviceApiSupported) return
+
   let prevDeviceLabel: string | null = null
   let prevDeviceId = ''
 
@@ -84,10 +90,10 @@ export default () => {
   void getMediaDevice(appSetting['player.mediaDeviceId']).then(async({ deviceId, label }) => setMediaDevice(deviceId, label))
 
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
-  navigator.mediaDevices.addEventListener('devicechange', handleMediaListChange)
+  mediaDevices.addEventListener?.('devicechange', handleMediaListChange)
 
   onBeforeUnmount(() => {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    navigator.mediaDevices.removeEventListener('devicechange', handleMediaListChange)
+    mediaDevices.removeEventListener?.('devicechange', handleMediaListChange)
   })
 }

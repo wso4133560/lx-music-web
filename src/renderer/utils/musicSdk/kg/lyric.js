@@ -1,6 +1,11 @@
 import { httpFetch } from '../../request'
 import { decodeKrc } from '@common/utils/lyricUtils/kg'
 
+const decodeBase64Text = (value) => {
+  if (typeof Buffer != 'undefined') return Buffer.from(value, 'base64').toString('utf-8')
+  return new TextDecoder().decode(Uint8Array.from(atob(value), char => char.charCodeAt(0)))
+}
+
 export default {
   getIntv(interval) {
     if (!interval) return 0
@@ -79,7 +84,7 @@ export default {
           return decodeKrc(body.content)
         case 'lrc':
           return {
-            lyric: Buffer.from(body.content, 'base64').toString('utf-8'),
+            lyric: decodeBase64Text(body.content),
             tlyric: '',
             rlyric: '',
             lxlyric: '',

@@ -9,10 +9,17 @@ import {
 import { isWebRuntime } from './runtime'
 
 export const getAvailableSystemFonts = async() => {
-  return getDesktopSystemFonts()
+  if (isWebRuntime) return []
+  return (await getDesktopSystemFonts()) ?? []
 }
 
 export const selectDirectory = async({ title, defaultPath }: { title: string, defaultPath?: string }) => {
+  if (isWebRuntime) {
+    return {
+      canceled: true,
+      filePaths: [],
+    }
+  }
   return showSelectDialog({
     title,
     defaultPath,
@@ -25,6 +32,12 @@ export const selectFiles = async(options: {
   filters?: Electron.FileFilter[]
   properties?: Electron.OpenDialogOptions['properties']
 }) => {
+  if (isWebRuntime) {
+    return {
+      canceled: true,
+      filePaths: [],
+    }
+  }
   return showSelectDialog({
     title: options.title,
     filters: options.filters,
@@ -37,6 +50,12 @@ export const selectSaveFile = async(options: {
   defaultPath?: string
   filters?: Electron.FileFilter[]
 }) => {
+  if (isWebRuntime) {
+    return {
+      canceled: true,
+      filePath: '',
+    }
+  }
   return openSaveDir({
     title: options.title,
     defaultPath: options.defaultPath,

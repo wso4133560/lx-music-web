@@ -46,6 +46,7 @@ export const toggleRuntimeWindowVisibility = () => {
 }
 
 export const setRuntimeFullScreen = async(isFullscreen: boolean) => {
+  if (isWebRuntime) return isFullscreen
   return setDesktopFullScreen(isFullscreen)
 }
 

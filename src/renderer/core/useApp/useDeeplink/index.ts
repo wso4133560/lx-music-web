@@ -5,8 +5,7 @@ import { useDialog } from './utils'
 import useMusicAction from './useMusicAction'
 import useSonglistAction from './useSonglistAction'
 import usePlayerAction from './usePlayerAction'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 export default () => {
   let isInited = false

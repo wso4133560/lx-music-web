@@ -6,7 +6,11 @@
         <use xlink:href="#icon-add-2" />
       </svg>
     </button>
-    <button :class="$style.titleBtn" :aria-label="toggleDesktopLyricBtnTitle" @click="toggleDesktopLyric" @contextmenu="toggleLockDesktopLyric">
+    <button
+      v-if="supportsDesktopLyric"
+      :class="$style.titleBtn" :aria-label="toggleDesktopLyricBtnTitle"
+      @click="toggleDesktopLyric" @contextmenu="toggleLockDesktopLyric"
+    >
       <svg v-show="appSetting['desktopLyric.enable']" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 512 512" space="preserve">
         <use xlink:href="#icon-desktop-lyric-on" />
       </svg>
@@ -25,6 +29,7 @@ import { ref } from '@common/utils/vueTools'
 import useToggleDesktopLyric from '@renderer/utils/compositions/useToggleDesktopLyric'
 import { musicInfo, playMusicInfo } from '@renderer/store/player/state'
 import { appSetting } from '@renderer/store/setting'
+import { supportsDesktopLyric } from '@renderer/platform/runtime'
 
 export default {
   setup() {
@@ -40,6 +45,7 @@ export default {
     }
     return {
       appSetting,
+      supportsDesktopLyric,
       isShowAddMusicTo,
       toggleDesktopLyricBtnTitle,
       toggleDesktopLyric,

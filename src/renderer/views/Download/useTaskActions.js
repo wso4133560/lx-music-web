@@ -7,8 +7,8 @@ import { checkPath } from '@common/utils/nodejs'
 // import { appSetting } from '@renderer/store/setting'
 import { toOldMusicInfo } from '@renderer/utils/index'
 import { startDownloadTasks, pauseDownloadTasks, removeDownloadTasks } from '@renderer/store/download/action'
-import { openDirInExplorer } from '@renderer/utils/ipc'
 import { isWebRuntime } from '@renderer/platform/runtime'
+import { revealInFileManager } from '@renderer/platform/system'
 
 export default ({ list, selectedList, removeAllSelect }) => {
   const router = useRouter()
@@ -74,7 +74,7 @@ export default ({ list, selectedList, removeAllSelect }) => {
       return
     }
     if (!checkPath(task.metadata.filePath)) return
-    openDirInExplorer(task.metadata.filePath)
+    revealInFileManager(task.metadata.filePath)
   }
 
   return {

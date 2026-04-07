@@ -127,8 +127,8 @@ import PlayTimeoutModal from './PlayTimeoutModal.vue'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { getThemes, applyTheme, findTheme, buildBgUrl } from '@renderer/store/utils'
 
-const ThemeEditModal = defineAsyncComponent(() => import('./ThemeEditModal/index.vue'))
-const UserApiModal = defineAsyncComponent(() => import('./UserApiModal.vue'))
+const ThemeEditModal = defineAsyncComponent(async() => import('./ThemeEditModal/index.vue'))
+const UserApiModal = defineAsyncComponent(async() => import('./UserApiModal.vue'))
 
 export default {
   name: 'SettingBasic',
@@ -161,9 +161,10 @@ export default {
     const autoTheme = reactive({})
     const updateAutoTheme = (info) => {
       let light = findTheme(info, appSetting['theme.lightId'])
-      light ??= info.themes.find(theme => theme.id == 'green')
+      light ??= findTheme(info, 'green')
       let dark = findTheme(info, appSetting['theme.darkId'])
-      dark ??= info.themes.find(theme => theme.id == 'black')
+      dark ??= findTheme(info, 'black')
+      if (!light || !dark) return
       autoTheme['--color-primary-theme-light'] = light.config.themeColors['--color-theme']
       autoTheme['--background-image-theme-light'] = light.isCustom
         ? light.config.extInfo['--background-image'] == 'none'

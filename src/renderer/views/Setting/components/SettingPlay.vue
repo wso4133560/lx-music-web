@@ -66,17 +66,22 @@ export default {
     const playQualityList = [...TRY_QUALITYS_LIST, '128k'].reverse()
 
     const mediaDevices = ref([])
+    const mediaDeviceApi = navigator.mediaDevices
     const getMediaDevice = async() => {
-      const devices = await navigator.mediaDevices.enumerateDevices()
+      if (!mediaDeviceApi?.enumerateDevices) {
+        mediaDevices.value = []
+        return
+      }
+      const devices = await mediaDeviceApi.enumerateDevices()
       let audioDevices = devices.filter(device => device.kind === 'audiooutput')
       mediaDevices.value = audioDevices
       // console.log(this.mediaDevices)
     }
     void getMediaDevice()
 
-    navigator.mediaDevices.addEventListener('devicechange', getMediaDevice)
+    mediaDeviceApi?.addEventListener?.('devicechange', getMediaDevice)
     onBeforeUnmount(() => {
-      navigator.mediaDevices.removeEventListener('devicechange', getMediaDevice)
+      mediaDeviceApi?.removeEventListener?.('devicechange', getMediaDevice)
     })
 
     const mediaDeviceId = ref(appSetting['player.mediaDeviceId'])

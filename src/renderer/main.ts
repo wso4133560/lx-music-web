@@ -26,8 +26,7 @@ import { initSetting } from './store/setting'
 
 import './worker'
 import { saveViewPrevState } from './utils/data'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 // sync(store, router)
 

@@ -1,4 +1,4 @@
-import { createDownload, type DownloaderType, type Options as DownloadOptions } from '@common/utils/download'
+import type { DownloaderType, Options as DownloadOptions } from '@common/utils/download'
 // import music from '@renderer/utils/musicSdk'
 import { createDownloadInfo } from './utils'
 // import {
@@ -221,6 +221,7 @@ const createTask = async(downloadInfo: LX.Download.ListItem, savePath: string, s
   // commit('setStatusText', { downloadInfo, text: '获取URL中...' })
 
   tryNum.set(downloadInfo.id, 0)
+  const { createDownload } = await import('@common/utils/download')
   dls.set(downloadInfo.id, createDownload(downloadOptions))
 }
 

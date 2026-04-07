@@ -8,7 +8,7 @@
 import { encodePath, isUrl } from '@common/utils/common'
 import { joinPath } from '@common/utils/nodejs'
 import { markRaw, shallowReactive } from '@common/utils/vueTools'
-import defaultSetting from '@common/defaultSetting'
+import defaultThemes from '@common/theme/index.json'
 import { getThemes as getTheme } from '@renderer/utils/ipc'
 import { qualityList, themeInfo, themeShouldUseDarkColors } from './index'
 
@@ -27,27 +27,23 @@ export const getThemes = (callback: (themeInfo: LX.ThemeInfo) => void) => {
     callback(themeInfo)
     return
   }
+  const applyFallbackThemeInfo = () => {
+    themeInfo.themes = markRaw(defaultThemes as LX.Theme[])
+    themeInfo.userThemes = shallowReactive([])
+    themeInfo.dataPath = ''
+    callback(themeInfo)
+  }
   void getTheme().then(info => {
+    if (!info?.themes || !info?.userThemes) {
+      applyFallbackThemeInfo()
+      return
+    }
     themeInfo.themes = markRaw(info.themes)
     themeInfo.userThemes = shallowReactive(info.userThemes)
     themeInfo.dataPath = info.dataPath
     callback(themeInfo)
   }).catch(() => {
-    const defaultThemeId = defaultSetting['theme.id']
-    themeInfo.themes = markRaw([])
-    themeInfo.userThemes = shallowReactive([{
-      id: defaultThemeId,
-      name: defaultThemeId,
-      isCustom: false,
-      config: {
-        extInfo: {
-          '--background-image': 'none',
-        },
-        themeColors: {},
-      },
-    } as LX.Theme])
-    themeInfo.dataPath = ''
-    callback(themeInfo)
+    applyFallbackThemeInfo()
   })
 }
 export const buildThemeColors = (theme: LX.Theme, dataPath: string) => {

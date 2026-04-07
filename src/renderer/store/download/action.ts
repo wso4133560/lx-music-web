@@ -18,8 +18,7 @@ import { arrPush, arrUnshift, joinPath } from '@renderer/utils'
 import { DOWNLOAD_STATUS } from '@common/constants'
 import { proxy } from '../index'
 import { buildSavePath } from './utils'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 const waitingUpdateTasks = new Map<string, LX.Download.ListItem>()
 let timer: NodeJS.Timeout | null = null

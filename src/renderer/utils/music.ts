@@ -1,7 +1,6 @@
 import { checkPath, joinPath, extname, basename, readFile, getFileStats } from '@common/utils/nodejs'
 import { formatPlayTime } from '@common/utils/common'
 import type { IComment } from 'music-metadata/lib/type'
-import { decodeKrc } from '@common/utils/lyricUtils/kg'
 
 export const checkDownloadFileAvailable = async(musicInfo: LX.Download.ListItem, savePath: string): Promise<boolean> => {
   return musicInfo.isComplate && !/\.ape$/.test(musicInfo.metadata.fileName) &&
@@ -199,6 +198,7 @@ export const getLocalMusicFileLyric = async(path: string): Promise<LX.Music.Lyri
   if (stats && stats.size < 1024 * 1024 * 10) {
     const lrcBuf = await readFile(lrcPath)
     try {
+      const { decodeKrc } = await import('@common/utils/lyricUtils/kg')
       return await decodeKrc(lrcBuf)
     } catch (e) {
       console.log(e)

@@ -29,8 +29,7 @@ import {
   subscribeRuntimeThemeChanges,
   toggleRuntimeWindowVisibility,
 } from '@renderer/platform/window'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 const handle_key_down = ({ event, type, key }: LX.KeyDownEevent) => {
   // console.log(key)

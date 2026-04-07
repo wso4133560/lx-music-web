@@ -5,9 +5,8 @@ import { setPlatformWindowSize } from '@renderer/platform/system'
 import { setLanguage } from '@root/lang'
 import { setUserApi } from '../apiSource'
 import { getSyncSnapshot, requestSyncAction } from '@renderer/platform/sync'
+import { isWebRuntime } from '@renderer/platform/runtime'
 // import { applyTheme, getThemes } from '@renderer/store/utils'
-
-const isWebRuntime = !(window as any).require?.('electron')
 
 export default () => {
   const refreshSyncStatus = async() => {

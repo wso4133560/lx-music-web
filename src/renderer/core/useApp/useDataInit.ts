@@ -7,9 +7,7 @@ import { onBeforeUnmount } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
 import { playMusicInfo } from '@renderer/store/player/state'
 import { initDislikeInfo, registerRemoteDislikeAction } from '@renderer/core/dislikeList'
-import { setUserApi } from '@renderer/core/apiSource'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 const initPrevPlayInfo = async() => {
   const info = await getRuntimePlayInfo()
@@ -32,6 +30,7 @@ const initPrevPlayInfo = async() => {
 export default () => {
   let unregister: null | (() => void) = null
   let unregisterDislikeEvent: null | (() => void) = null
+  let initUserApiPromise: null | Promise<() => Promise<void>> = null
 
   onBeforeUnmount(() => {
     if (unregister) unregister()
@@ -39,19 +38,13 @@ export default () => {
   })
 
   return async() => {
-    if (!isWebRuntime) {
-      const { default: useInitUserApi } = await import('./useInitUserApi')
-      const initUserApi = useInitUserApi()
-      await Promise.all([
-        initUserApi(), // 自定义API
-      ]).catch(err => {
-        log.error(err)
-      })
-    } else {
-      await setUserApi(appSetting['common.apiSource']).catch(err => {
-        log.error(err)
-      })
-    }
+    initUserApiPromise ??= import('./useInitUserApi').then(({ default: useInitUserApi }) => useInitUserApi())
+    const initUserApi = await initUserApiPromise
+    await Promise.all([
+      initUserApi(), // 自定义API
+    ]).catch(err => {
+      log.error(err)
+    })
     void music.init() // 初始化音乐sdk
     unregister = registerAction((ids) => {
       window.app_event.myListUpdate(ids)

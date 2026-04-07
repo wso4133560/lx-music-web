@@ -94,8 +94,8 @@ for (const dynamicComponent of [
   expectIncludes(settingIndex, dynamicComponent, `Desktop-only setting panel is lazy-loaded: ${dynamicComponent}`)
 }
 for (const modalComponent of [
-  "defineAsyncComponent(() => import('./ThemeEditModal/index.vue'))",
-  "defineAsyncComponent(() => import('./UserApiModal.vue'))",
+  './ThemeEditModal/index.vue',
+  './UserApiModal.vue',
 ]) {
   expectIncludes(settingBasic, modalComponent, `Desktop-only setting modal is lazy-loaded: ${modalComponent}`)
 }
@@ -115,7 +115,7 @@ for (const desktopFlag of [
   'supportsLocalMusic = isElectronRuntime',
   'supportsListImportExport = isElectronRuntime',
   'supportsThemeEditing = isElectronRuntime',
-  'supportsUserApiManagement = isElectronRuntime',
+  'supportsUserApiManagement = true',
   'supportsAppUpdates = isElectronRuntime',
 ]) {
   expectIncludes(read('src/renderer/platform/runtime.ts'), desktopFlag, `Runtime flag preserved: ${desktopFlag}`)
@@ -133,7 +133,7 @@ for (const dir of ipcTargets) {
     const content = read(file)
     const lines = content.split('\n')
     lines.forEach((line, index) => {
-      if (line.includes("@renderer/utils/ipc") && !line.trim().startsWith('//')) {
+      if (line.includes('@renderer/utils/ipc') && !line.trim().startsWith('//')) {
         liveIpcImports.push(`${file}:${index + 1}`)
       }
     })

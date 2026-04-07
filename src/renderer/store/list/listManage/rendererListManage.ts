@@ -18,8 +18,7 @@ import {
   listMusicClear,
 } from './action'
 import { allMusicList } from './state'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 /**
  * 获取用户列表

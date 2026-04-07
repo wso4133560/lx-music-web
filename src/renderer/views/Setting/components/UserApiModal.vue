@@ -37,7 +37,7 @@ import { userApi } from '@renderer/store'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { computed, ref } from '@common/utils/vueTools'
 import { dialog } from '@renderer/plugins/Dialog'
-import { supportsUserApiManagement } from '@renderer/platform/runtime'
+import { isWebRuntime, supportsUserApiManagement } from '@renderer/platform/runtime'
 import { selectFiles } from '@renderer/platform/system'
 import { importRuntimeUserApi, removeRuntimeUserApi, setRuntimeUserApiUpdateAlert } from '@renderer/platform/userApi'
 
@@ -75,13 +75,26 @@ export default {
         void dialog(this.$t('user_api_import__failed', { message: err.message }))
       })
     },
-    handleImport() {
+    async handleImport() {
       if (!supportsUserApiManagement) return
       if (this.userApi.list.length > 20) {
         this.$dialog({
           message: this.$t('user_api__max_tip'),
           confirmButtonText: this.$t('ok'),
         })
+        return
+      }
+      if (isWebRuntime) {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.js,text/javascript'
+        input.click()
+        input.onchange = async() => {
+          const file = input.files?.[0]
+          if (!file) return
+          const script = await file.text()
+          return this.importUserApi(script)
+        }
         return
       }
       void selectFiles({

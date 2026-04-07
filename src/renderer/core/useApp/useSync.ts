@@ -3,8 +3,7 @@ import { sync } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
 import { SYNC_CODE } from '@common/constants_sync'
 import { getSyncSnapshot, requestSyncAction, subscribeSyncActions } from '@renderer/platform/sync'
-
-const isWebRuntime = !(window as any).require?.('electron')
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 export default () => {
   const applySyncSnapshot = ({ server, client }: {
@@ -55,8 +54,8 @@ export default () => {
   }
 
   const rSyncAction = subscribeSyncActions(({ params }) => {
-      handleSyncList(params)
-    })
+    handleSyncList(params)
+  })
 
   onBeforeUnmount(() => {
     rSyncAction()
