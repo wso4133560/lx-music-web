@@ -30,10 +30,6 @@ import {
   filterMusicList,
   fixNewMusicInfoQuality,
 } from '@renderer/utils'
-import {
-  showSelectDialog,
-  openSaveDir,
-} from '@renderer/utils/ipc'
 // import { currentStting } from '../setting'
 import { dialog } from '@renderer/plugins/Dialog'
 import useImportTip from '@renderer/utils/compositions/useImportTip'
@@ -43,6 +39,8 @@ import { LIST_IDS } from '@common/constants'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import migrateSetting from '@common/utils/migrateSetting'
+import { exportPlayListToCSV, exportPlayListToText, readConfigFile, saveConfigFile } from '@renderer/platform/desktopFiles'
+import { selectDirectory, selectFiles, selectSaveFile } from '@renderer/platform/system'
 
 
 export default {
@@ -132,7 +130,7 @@ export default {
     const importAllData = async(path) => {
       let allData
       try {
-        allData = await window.lx.worker.main.readLxConfigFile(path)
+        allData = await readConfigFile(path)
       } catch (error) {
         return
       }
@@ -152,7 +150,7 @@ export default {
       }
     }
     const handleImportAllData = () => {
-      void showSelectDialog({
+      void selectFiles({
         title: t('setting__backup_all_import_desc'),
         properties: ['openFile'],
         filters: [
@@ -178,10 +176,10 @@ export default {
         setting: { ...appSetting },
         playList: await getAllLists(),
       }
-      void window.lx.worker.main.saveLxConfigFile(path, allData)
+      void saveConfigFile(path, allData)
     }
     const handleExportAllData = () => {
-      void openSaveDir({
+      void selectSaveFile({
         title: t('setting__backup_all_export_desc'),
         defaultPath: 'lx_datas_v2.lxmc',
       }).then(result => {
@@ -195,10 +193,10 @@ export default {
         type: 'setting_v2',
         data: { ...appSetting },
       }
-      void window.lx.worker.main.saveLxConfigFile(path, data)
+      void saveConfigFile(path, data)
     }
     const handleExportSetting = () => {
-      void openSaveDir({
+      void selectSaveFile({
         title: t('setting__backup_part_export_setting_desc'),
         defaultPath: 'lx_setting_v2.lxmc',
       }).then(result => {
@@ -210,7 +208,7 @@ export default {
     const importSetting = async(path) => {
       let settingData
       try {
-        settingData = await window.lx.worker.main.readLxConfigFile(path)
+        settingData = await readConfigFile(path)
       } catch (error) {
         return
       }
@@ -226,7 +224,7 @@ export default {
       }
     }
     const handleImportSetting = () => {
-      void showSelectDialog({
+      void selectFiles({
         title: t('setting__backup_part_import_setting_desc'),
         properties: ['openFile'],
         filters: [
@@ -244,10 +242,10 @@ export default {
         type: 'playList_v2',
         data: await getAllLists(),
       }
-      void window.lx.worker.main.saveLxConfigFile(path, data)
+      void saveConfigFile(path, data)
     }
     const handleExportPlayList = () => {
-      void openSaveDir({
+      void selectSaveFile({
         title: t('setting__backup_part_export_list_desc'),
         defaultPath: 'lx_list.lxmc',
       }).then(result => {
@@ -259,7 +257,7 @@ export default {
     const importPlayList = async(path) => {
       let listData
       try {
-        listData = await window.lx.worker.main.readLxConfigFile(path)
+        listData = await readConfigFile(path)
       } catch (error) {
         return
       }
@@ -279,7 +277,7 @@ export default {
       }
     }
     const handleImportPlayList = () => {
-      void showSelectDialog({
+      void selectFiles({
         title: t('setting__backup_part_import_list_desc'),
         properties: ['openFile'],
         filters: [
@@ -299,9 +297,9 @@ export default {
       })
     }
 
-    const exportPlayListToText = async(savePath, isMerge) => {
+    const handleExportPlayListText = async(savePath, isMerge) => {
       const lists = await getAllLists()
-      await window.lx.worker.main.exportPlayListToText(savePath, lists, isMerge)
+      await exportPlayListToText(savePath, lists, isMerge)
     }
     const handleExportPlayListToText = async() => {
       const confirm = await dialog.confirm({
@@ -310,30 +308,28 @@ export default {
         confirmButtonText: t('confirm_button_text'),
       })
       if (confirm) {
-        void openSaveDir({
+        void selectSaveFile({
           title: t('setting__backup_other_export_dir'),
           defaultPath: 'lx_list_all.txt',
         }).then(result => {
           if (result.canceled) return
           let path = result.filePath
           if (!path.endsWith('.txt')) path += '.txt'
-          void exportPlayListToText(path, true)
+          void handleExportPlayListText(path, true)
         })
       } else {
-        void showSelectDialog({
+        void selectDirectory({
           title: t('setting__backup_other_export_dir'),
-          // defaultPath: currentStting.value.download.savePath,
-          properties: ['openDirectory'],
         }).then(result => {
           if (result.canceled) return
-          void exportPlayListToText(result.filePaths[0], false)
+          void handleExportPlayListText(result.filePaths[0], false)
         })
       }
     }
 
-    const exportPlayListToCsv = async(savePath, isMerge) => {
+    const handleExportPlayListCsv = async(savePath, isMerge) => {
       const lists = await getAllLists()
-      await window.lx.worker.main.exportPlayListToCSV(savePath, lists, isMerge, `${t('music_name')},${t('music_singer')},${t('music_album')}\n`)
+      await exportPlayListToCSV(savePath, lists, isMerge, `${t('music_name')},${t('music_singer')},${t('music_album')}\n`)
     }
     const handleExportPlayListToCsv = async() => {
       const confirm = await dialog.confirm({
@@ -342,23 +338,21 @@ export default {
         confirmButtonText: t('confirm_button_text'),
       })
       if (confirm) {
-        void openSaveDir({
+        void selectSaveFile({
           title: t('setting__backup_other_export_dir'),
           defaultPath: 'lx_list_all.csv',
         }).then(result => {
           if (result.canceled) return
           let path = result.filePath
           if (!path.endsWith('.csv')) path += '.csv'
-          void exportPlayListToCsv(path, true)
+          void handleExportPlayListCsv(path, true)
         })
       } else {
-        void showSelectDialog({
+        void selectDirectory({
           title: t('setting__backup_other_export_dir'),
-          // defaultPath: currentStting.value.download.savePath,
-          properties: ['openDirectory'],
         }).then(result => {
           if (result.canceled) return
-          void exportPlayListToCsv(result.filePaths[0], false)
+          void handleExportPlayListCsv(result.filePaths[0], false)
         })
       }
     }

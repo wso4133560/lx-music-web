@@ -1,5 +1,5 @@
 <template lang="pug">
-div(:class="$style.header")
+div(v-if="supportsDesktopWindowControls" :class="$style.header")
   div(ref="dom_btns" :class="$style.controBtn")
     button(type="button" :class="$style.hide" :aria-label="$t('player__hide_detail_tip')" ignore-tip :title="$t('player__hide_detail_tip')" @click="hide")
       svg(:class="$style.controBtnIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="80%" viewBox="0 0 30.727 30.727" space="preserve")
@@ -22,7 +22,12 @@ div(:class="$style.header")
 import { ref, onMounted, onBeforeUnmount, useCssModule } from '@common/utils/vueTools'
 import { isFullscreen } from '@renderer/store'
 import { setShowPlayerDetail } from '@renderer/store/player/action'
-import { closeWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
+import { supportsDesktopWindowControls } from '@renderer/platform/runtime'
+import {
+  closeRuntimeWindow as closeWindow,
+  minRuntimeWindow as minWindow,
+  setRuntimeFullScreen as setFullScreen,
+} from '@renderer/platform/window'
 
 const dom_btns = ref()
 

@@ -27,13 +27,13 @@ material-modal(:show="isShowChangeLog" max-width="60%" @close="isShowChangeLog =
 import { compareVer } from '@common/utils'
 import { openUrl, clipboardWriteText } from '@common/utils/electron'
 import { versionInfo, isShowChangeLog } from '@renderer/store'
-import { getLastStartInfo } from '@renderer/utils/ipc'
+import { getRuntimeLastStartInfo } from '@renderer/platform/update'
 import { computed, ref } from '@common/utils/vueTools'
 
 export default {
   setup() {
     const lastStartVersion = ref(null)
-    void getLastStartInfo().then(version => {
+    void getRuntimeLastStartInfo().then(version => {
       lastStartVersion.value = version
     })
 

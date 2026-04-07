@@ -2,7 +2,7 @@ import { useRouter, useRoute } from '@common/utils/vueRouter'
 import { isShowPlayerDetail } from '@renderer/store/player/state'
 import { setShowPlayerDetail } from '@renderer/store/player/action'
 import usePlaySonglist from '../compositions/usePlaySonglist'
-import { focusWindow } from '@renderer/utils/ipc'
+import { focusRuntimeWindow as focusWindow } from '@renderer/platform/window'
 
 import { dataVerify, sourceVerify } from './utils'
 

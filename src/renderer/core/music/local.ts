@@ -1,7 +1,8 @@
 import { encodePath } from '@common/utils/common'
 import { updateListMusics } from '@renderer/store/list/action'
-import { saveLyric, saveMusicUrl } from '@renderer/utils/ipc'
 import { getLocalFilePath } from '@renderer/utils/music'
+import { getMusicFileLyric, getMusicFilePic } from '@renderer/platform/desktopFiles'
+import { saveCachedLyric, saveCachedMusicUrl } from '@renderer/platform/musicCache'
 
 import {
   buildLyricInfo,
@@ -79,7 +80,7 @@ export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = tru
 
   try {
     return await getOnlineOtherSourceMusicUrlByLocal(musicInfo, isRefresh).then(({ url, quality, isFromCache }) => {
-      if (!isFromCache) void saveMusicUrl(musicInfo, quality, url)
+      if (!isFromCache) void saveCachedMusicUrl(musicInfo, quality, url)
       return url
     })
   } catch {}
@@ -90,7 +91,7 @@ export const getMusicUrl = async({ musicInfo, isRefresh, allowToggleSource = tru
   return getOtherSourceByLocal(musicInfo, async(otherSource) => {
     return getOnlineOtherSourceMusicUrl({ musicInfos: [...otherSource], onToggleSource, isRefresh }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache }) => {
       // saveLyric(musicInfo, data.lyricInfo)
-      if (!isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
+      if (!isFromCache) void saveCachedMusicUrl(targetMusicInfo, targetQuality, url)
 
       // TODO: save url ?
       return url
@@ -105,7 +106,7 @@ export const getPicUrl = async({ musicInfo, listId, isRefresh, onToggleSource = 
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<string> => {
   if (!isRefresh) {
-    const pic = await window.lx.worker.main.getMusicFilePic(musicInfo.meta.filePath)
+    const pic = await getMusicFilePic(musicInfo.meta.filePath)
     if (pic) return pic
 
     if (musicInfo.meta.picUrl) return musicInfo.meta.picUrl
@@ -136,7 +137,7 @@ export const getLyricInfo = async({ musicInfo, isRefresh, onToggleSource = () =>
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<LX.Player.LyricInfo> => {
   if (!isRefresh) {
-    const [lyricInfo, fileLyricInfo] = await Promise.all([getCachedLyricInfo(musicInfo), window.lx.worker.main.getMusicFileLyric(musicInfo.meta.filePath)])
+    const [lyricInfo, fileLyricInfo] = await Promise.all([getCachedLyricInfo(musicInfo), getMusicFileLyric(musicInfo.meta.filePath)])
     // console.log(lyricInfo, fileLyricInfo)
     if (lyricInfo?.lyric && lyricInfo.lyric != fileLyricInfo?.lyric) {
       // 存在已编辑歌词
@@ -150,7 +151,7 @@ export const getLyricInfo = async({ musicInfo, isRefresh, onToggleSource = () =>
   try {
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     return await getOnlineOtherSourceLyricByLocal(musicInfo, isRefresh).then(({ lyricInfo, isFromCache }) => {
-      if (!isFromCache) void saveLyric(musicInfo, lyricInfo)
+      if (!isFromCache) void saveCachedLyric(musicInfo, lyricInfo)
       return buildLyricInfo(lyricInfo)
     })
   } catch {}
@@ -158,10 +159,10 @@ export const getLyricInfo = async({ musicInfo, isRefresh, onToggleSource = () =>
   onToggleSource()
   return getOtherSourceByLocal(musicInfo, async(otherSource) => {
     return getOnlineOtherSourceLyricInfo({ musicInfos: [...otherSource], onToggleSource, isRefresh }).then(async({ lyricInfo, musicInfo: targetMusicInfo, isFromCache }) => {
-      void saveLyric(musicInfo, lyricInfo)
+      void saveCachedLyric(musicInfo, lyricInfo)
 
       if (isFromCache) return buildLyricInfo(lyricInfo)
-      void saveLyric(targetMusicInfo, lyricInfo)
+      void saveCachedLyric(targetMusicInfo, lyricInfo)
 
       return buildLyricInfo(lyricInfo)
     })

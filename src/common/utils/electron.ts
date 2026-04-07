@@ -1,12 +1,14 @@
-import { shell, clipboard } from 'electron'
-
+const getElectron = () => {
+  return (window as any).require?.('electron') ?? null
+}
 
 /**
  * 在资源管理器中打开目录
  * @param {string} dir
  */
 export const openDirInExplorer = (dir: string) => {
-  shell.showItemInFolder(dir)
+  const shell = getElectron()?.shell
+  if (shell) shell.showItemInFolder(dir)
 }
 
 
@@ -16,7 +18,12 @@ export const openDirInExplorer = (dir: string) => {
  */
 export const openUrl = async(url: string) => {
   if (!/^https?:\/\//.test(url)) return
-  await shell.openExternal(url)
+  const shell = getElectron()?.shell
+  if (shell) {
+    await shell.openExternal(url)
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 
@@ -25,7 +32,12 @@ export const openUrl = async(url: string) => {
  * @param str
  */
 export const clipboardWriteText = (str: string) => {
-  clipboard.writeText(str)
+  const clipboard = getElectron()?.clipboard
+  if (clipboard) {
+    clipboard.writeText(str)
+    return
+  }
+  void navigator.clipboard?.writeText(str)
 }
 
 /**
@@ -33,7 +45,9 @@ export const clipboardWriteText = (str: string) => {
  * @returns
  */
 export const clipboardReadText = (): string => {
-  return clipboard.readText()
+  const clipboard = getElectron()?.clipboard
+  if (clipboard) return clipboard.readText()
+  return ''
 }
 
 

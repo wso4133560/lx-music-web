@@ -2,6 +2,8 @@ import { reactive, computed } from '@common/utils/vueTools'
 import defaultSetting from '@common/defaultSetting'
 import { updateSetting as saveSetting } from '@renderer/utils/ipc'
 
+const isWebRuntime = !(window as any).require?.('electron')
+
 export const appSetting = window.lxData.appSetting = reactive<LX.AppSetting>({ ...defaultSetting })
 
 export const isShowAnimation = computed(() => {
@@ -21,7 +23,8 @@ export const mergeSetting = (newSetting: Partial<LX.AppSetting>) => {
 }
 
 export const updateSetting = window.lxData.updateSetting = (setting: Partial<LX.AppSetting>) => {
-  // console.warn(setting)
+  mergeSetting(setting)
+  if (isWebRuntime) return
   void saveSetting(setting)
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <div v-show="!isFullscreen" ref="dom_btns" :class="$style.controlBtn">
+  <div v-if="supportsDesktopWindowControls" v-show="!isFullscreen" ref="dom_btns" :class="$style.controlBtn">
     <button type="button" :class="[$style.btn, $style.close]" :aria-label="$t('close')" ignore-tip :title="$t('close')" @click="closeWindow">
       <svg :class="$style.controlBtniIcon" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" width="100%" viewBox="0 0 24 24" space="preserve">
         <use xlink:href="#icon-window-close" />
@@ -14,10 +14,11 @@
 </template>
 
 <script setup>
-import { minWindow, closeWindow } from '@renderer/utils/ipc'
 import { onMounted, onBeforeUnmount, ref, useCssModule } from '@common/utils/vueTools'
 // import { getRandom } from '../../utils'
 import { isFullscreen } from '@renderer/store'
+import { supportsDesktopWindowControls } from '@renderer/platform/runtime'
+import { closeRuntimeWindow as closeWindow, minRuntimeWindow as minWindow } from '@renderer/platform/window'
 
 const dom_btns = ref()
 

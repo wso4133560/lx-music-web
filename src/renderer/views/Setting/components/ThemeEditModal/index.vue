@@ -25,7 +25,7 @@
               <div ref="main_bg_color_ref" :class="$style.color" />
               <div :class="$style.label">{{ $t('theme_edit_modal__main_bg') }}</div>
             </div>
-            <div :class="[$style.item, $style.bg]">
+            <div v-if="supportsThemeBackgroundImage" :class="[$style.item, $style.bg]">
               <div :class="[$style.bgImg, {[$style.hasBg]: !!bgImg}]" @click="selectBgImg">
                 <img v-if="bgImg" loading="lazy" decoding="async" :class="$style.img" :src="bgImg" alt="Background Image">
                 <svg-icon v-else :class="$style.icon" name="plus" />
@@ -40,7 +40,7 @@
           </div>
         </div>
         <div :class="$style.groupContent">
-          <div :class="$style.group">
+          <div v-if="supportsDesktopWindowControls" :class="$style.group">
             <div :class="$style.groupTitle">
               <span :class="$style.title">{{ $t('theme_edit_modal__badge') }}</span>
               <span class="badge badge-theme-primary">{{ $t('tag__lossless') }}</span>
@@ -142,9 +142,11 @@ import useCloseBtnColor from './useCloseBtnColor'
 import useMinBtnColor from './useMinBtnColor'
 import useHideBtnColor from './useHideBtnColor'
 import { appSetting, updateSetting } from '@renderer/store/setting'
-import { removeTheme, saveTheme, showSelectDialog } from '@renderer/utils/ipc'
 import { dialog } from '@renderer/plugins/Dialog'
 import { themeInfo } from '@renderer/store'
+import { supportsDesktopWindowControls, supportsThemeBackgroundImage } from '@renderer/platform/runtime'
+import { selectFiles } from '@renderer/platform/system'
+import { removeRuntimeTheme, saveRuntimeTheme } from '@renderer/platform/theme'
 
 
 export default {
@@ -368,7 +370,8 @@ export default {
     })
 
     const selectBgImg = async() => {
-      const result = await showSelectDialog({
+      if (!supportsThemeBackgroundImage) return
+      const result = await selectFiles({
         title: window.i18n.t('theme_edit_modal__select_bg_file'),
         properties: ['openFile'],
         filters: [
@@ -446,7 +449,7 @@ export default {
         if (index > -1) themeInfo.userThemes.splice(index, 1, theme)
       } else themeInfo.userThemes.push(theme)
       handlePreview(false)
-      await saveTheme(theme)
+      await saveRuntimeTheme(theme)
       emit('submit')
       emit('update:modelValue', false)
     }
@@ -477,7 +480,7 @@ export default {
       }
       if (isRequireUpdateSetting) updateSetting(newSetting)
       if (originBgName) void removeFile(joinPath(themeInfo.dataPath, originBgName))
-      await removeTheme(props.themeId)
+      await removeRuntimeTheme(props.themeId)
       const index = themeInfo.userThemes.findIndex(t => t.id == theme.id)
       console.log(index)
       if (index > -1) themeInfo.userThemes.splice(index, 1)
@@ -504,7 +507,7 @@ export default {
       }
       themeInfo.userThemes.push(theme)
       handlePreview(false)
-      await saveTheme(theme)
+      await saveRuntimeTheme(theme)
       emit('submit')
       emit('update:modelValue', false)
     }
@@ -536,6 +539,8 @@ export default {
       close_btn_color_ref,
       min_btn_color_ref,
       hide_btn_color_ref,
+      supportsDesktopWindowControls,
+      supportsThemeBackgroundImage,
     }
   },
 }

@@ -3,11 +3,11 @@ dt#download {{ $t('setting__download') }}
 dd
   .gap-top
     base-checkbox(id="setting_download_enable" :model-value="appSetting['download.enable']" :label="$t('setting__download_enable')" @update:model-value="updateSetting({'download.enable': $event})")
-  .gap-top
+  .gap-top(v-if="supportsDownloadSavePath")
     base-checkbox(id="setting_download_skip_exist_file" :model-value="appSetting['download.skipExistFile']" :label="$t('setting__download_skip_exist_file')" @update:model-value="updateSetting({'download.skipExistFile': $event})")
-  .gap-top
+  .gap-top(v-if="supportsDownloadSavePath")
     base-checkbox(id="setting_download_save_group_list_name" :model-value="appSetting['download.isSavePathGroupByListName']" :label="$t('setting_download_save_group_list_name')" @update:model-value="updateSetting({'download.isSavePathGroupByListName': $event})")
-dd(:aria-label="$t('setting__download_path_title')")
+dd(v-if="supportsDownloadSavePath" :aria-label="$t('setting__download_path_title')")
   h3#download_path {{ $t('setting__download_path') }}
   div
     .p
@@ -37,7 +37,7 @@ dd(:aria-label="$t('setting__download_name_title')")
     base-checkbox.gap-left(
         v-for="item in musicNames" :id="`setting_download_musicName_${item.value}`" :key="item.value" name="setting_download_musicName" :value="item.value"
         need :model-value="appSetting['download.fileName']" :label="item.name" @update:model-value="updateSetting({'download.fileName': $event})")
-dd
+dd(v-if="supportsDownloadMetadataEmbedding")
   h3#download_data_embed {{ $t('setting__download_data_embed') }}
   .gap-top
     base-checkbox(id="setting_download_isEmbedPic" :model-value="appSetting['download.isEmbedPic']" :label="$t('setting__download_embed_pic')" @update:model-value="updateSetting({'download.isEmbedPic': $event})")
@@ -49,7 +49,7 @@ dd
     base-checkbox(id="setting_download_isEmbedLyricR" :disabled="!appSetting['download.isEmbedLyric']" :model-value="appSetting['download.isEmbedLyricR']" :label="$t('setting__download_embed_rlyric')" @update:model-value="updateSetting({'download.isEmbedLyricR': $event})")
   .gap-top
     base-checkbox(id="setting_download_isEmbedLyricLx" :disabled="!appSetting['download.isEmbedLyric']" :model-value="appSetting['download.isEmbedLyricLx']" :label="$t('setting__download_embed_lxlyric')" @update:model-value="updateSetting({'download.isEmbedLyricLx': $event})")
-dd(:aria-label="$t('setting__download_lyric_title')")
+dd(v-if="supportsDownloadLyricFiles" :aria-label="$t('setting__download_lyric_title')")
   h3#download_lyric {{ $t('setting__download_lyric') }}
   .gap-top
     base-checkbox(id="setting_download_isDownloadLrc" :model-value="appSetting['download.isDownloadLrc']" :label="$t('setting__is_enable')" @update:model-value="updateSetting({'download.isDownloadLrc': $event})")
@@ -59,7 +59,7 @@ dd(:aria-label="$t('setting__download_lyric_title')")
     base-checkbox(id="setting_download_isDownloadRLrc" :disabled="!appSetting['download.isDownloadLrc']" :model-value="appSetting['download.isDownloadRLrc']" :label="$t('setting__download_rlyric')" @update:model-value="updateSetting({'download.isDownloadRLrc': $event})")
   .gap-top
     base-checkbox(id="setting_download_isDownloadLxLrc" :disabled="!appSetting['download.isDownloadLrc']" :model-value="appSetting['download.isDownloadLxLrc']" :label="$t('setting__download_lxlyric')" @update:model-value="updateSetting({'download.isDownloadLxLrc': $event})")
-dd
+dd(v-if="supportsDownloadLyricFiles")
   h3#download_lyric_format
     | {{ $t('setting__download_lyric_format') }}
     svg-icon(class="help-icon" name="help-circle-outline" :aria-label="$t('setting__download_lyric_format_tip')")
@@ -73,10 +73,15 @@ dd
 <script>
 import { computed } from '@common/utils/vueTools'
 // import { getSystemFonts } from '@renderer/utils/tools'
-import { showSelectDialog, openDirInExplorer } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { dialog } from '@renderer/plugins/Dialog'
+import { revealInFileManager, selectDirectory } from '@renderer/platform/system'
+import {
+  supportsDownloadLyricFiles,
+  supportsDownloadMetadataEmbedding,
+  supportsDownloadSavePath,
+} from '@renderer/platform/runtime'
 
 export default {
   name: 'SettingDownload',
@@ -84,10 +89,9 @@ export default {
     const t = useI18n()
 
     const handleChangeSavePath = () => {
-      void showSelectDialog({
+      void selectDirectory({
         title: t('setting__download_select_save_path'),
         defaultPath: appSetting['download.savePath'],
-        properties: ['openDirectory'],
       }).then(result => {
         if (result.canceled) return
         updateSetting({ 'download.savePath': result.filePaths[0] })
@@ -120,12 +124,15 @@ export default {
     return {
       appSetting,
       updateSetting,
-      openDirInExplorer,
+      openDirInExplorer: revealInFileManager,
       handleChangeSavePath,
       musicNames,
       lrcFormatList,
       maxNums,
       handleUpdateMaxNum,
+      supportsDownloadSavePath,
+      supportsDownloadMetadataEmbedding,
+      supportsDownloadLyricFiles,
     }
   },
 }

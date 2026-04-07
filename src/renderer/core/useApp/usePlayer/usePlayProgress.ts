@@ -1,7 +1,7 @@
 import { onBeforeUnmount, watch } from '@common/utils/vueTools'
 import { formatPlayTime2, getRandom } from '@common/utils/common'
 import { throttle } from '@common/utils'
-import { savePlayInfo } from '@renderer/utils/ipc'
+import { saveRuntimePlayInfo } from '@renderer/platform/player'
 import { onTimeupdate, getCurrentTime, getDuration, setCurrentTime, onVisibilityChange } from '@renderer/plugins/player'
 import { playProgress, setNowPlayTime, setMaxplayTime } from '@renderer/store/player/playProgress'
 import { musicInfo, playMusicInfo, playInfo } from '@renderer/store/player/state'
@@ -10,7 +10,7 @@ import { appSetting } from '@renderer/store/setting'
 import { playNext } from '@renderer/core/player'
 import { updateListMusics } from '@renderer/store/list/action'
 
-const delaySavePlayInfo = throttle(savePlayInfo, 2000)
+const delaySavePlayInfo = throttle(saveRuntimePlayInfo, 2000)
 
 export default () => {
   let restorePlayTime = 0

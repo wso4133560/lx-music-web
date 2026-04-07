@@ -1,10 +1,12 @@
 import { onBeforeUnmount } from '@common/utils/vueTools'
-import { clearEnvParamsDeeplink, focusWindow, onDeeplink } from '@renderer/utils/ipc'
+import { clearRuntimeDeeplink, focusRuntimeWindow, subscribeRuntimeDeeplink } from '@renderer/platform/window'
 
 import { useDialog } from './utils'
 import useMusicAction from './useMusicAction'
 import useSonglistAction from './useSonglistAction'
 import usePlayerAction from './usePlayerAction'
+
+const isWebRuntime = !(window as any).require?.('electron')
 
 export default () => {
   let isInited = false
@@ -50,17 +52,19 @@ export default () => {
     }
   }
 
-  const rDeeplink = onDeeplink(async({ params: link }) => {
-    console.log(link)
-    if (!isInited) return
-    clearEnvParamsDeeplink()
-    try {
-      await handleLinkAction(link)
-    } catch (err: any) {
-      showErrorDialog(err.message)
-      focusWindow()
-    }
-  })
+  const rDeeplink = isWebRuntime
+    ? () => {}
+    : subscribeRuntimeDeeplink(async({ params: link }) => {
+      console.log(link)
+      if (!isInited) return
+      clearRuntimeDeeplink()
+      try {
+        await handleLinkAction(link)
+      } catch (err: any) {
+        showErrorDialog(err.message)
+        focusRuntimeWindow()
+      }
+    })
 
   onBeforeUnmount(() => {
     rDeeplink()
@@ -68,12 +72,12 @@ export default () => {
 
   return async(envParams: LX.EnvParams) => {
     if (envParams.deeplink) {
-      clearEnvParamsDeeplink()
+      clearRuntimeDeeplink()
       try {
         await handleLinkAction(envParams.deeplink)
       } catch (err: any) {
         showErrorDialog(err.message)
-        focusWindow()
+        focusRuntimeWindow()
       }
     }
     isInited = true

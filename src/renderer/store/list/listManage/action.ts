@@ -9,6 +9,7 @@ import {
 import { overwriteListPosition, overwriteListUpdateInfo, removeListPosition, removeListUpdateInfo } from '@renderer/utils/data'
 import { LIST_IDS } from '@common/constants'
 import { arrPush, arrUnshift } from '@common/utils/common'
+import { createSortedList } from '@renderer/platform/list'
 
 export const setUserLists = (lists: LX.List.UserListInfo[]) => {
   userLists.splice(0, userLists.length, ...lists)
@@ -22,7 +23,6 @@ export const setMusicList = (listId: string, musicList: LX.Music.MusicInfo[]) =>
 }
 
 const overwriteMusicList = (id: string, list: LX.Music.MusicInfo[]) => {
-  // console.log(id, list)
   markRawList(list)
   let targetList = allMusicList.get(id)
   if (targetList) {
@@ -93,18 +93,11 @@ const removeUserList = (id: string) => {
   const index = userLists.findIndex(l => l.id == id)
   if (index < 0) return
   userLists.splice(index, 1)
-  // removeMusicList(id)
 }
 
 const overwriteUserList = (lists: LX.List.UserListInfo[]) => {
   userLists.splice(0, userLists.length, ...lists)
 }
-
-
-// const sendMyListUpdateEvent = (ids: string[]) => {
-//   window.app_event.myListUpdate(ids)
-// }
-
 
 export const listDataOverwrite = ({ defaultList, loveList, userList, tempList }: MakeOptional<LX.List.ListDataFull, 'tempList'>): string[] => {
   const updatedListIds: string[] = []
@@ -185,11 +178,8 @@ export const userListsUpdate = (listInfos: LX.List.UserListInfo[]) => {
 export const userListsUpdatePosition = (position: number, ids: string[]) => {
   const newUserLists = [...userLists]
 
-  // console.log(position, ids)
-
   const updateLists: LX.List.UserListInfo[] = []
 
-  // const targetItem = list[position]
   const map = new Map<string, LX.List.UserListInfo>()
   for (const item of newUserLists) map.set(item.id, item)
   for (const id of ids) {
@@ -290,23 +280,10 @@ export const listMusicUpdatePosition = async(listId: string, position: number, i
   let targetList = allMusicList.get(listId)
   if (!targetList) return listId == loveList.id ? [listId] : []
 
-
-  // const infos = Array(ids.length)
-  // for (let i = targetList.length; i--;) {
-  //   const item = targetList[i]
-  //   const index = ids.indexOf(item.id)
-  //   if (index < 0) continue
-  //   infos.splice(index, 1, targetList.splice(i, 1)[0])
-  // }
-  // targetList.splice(Math.min(position, targetList.length - 1), 0, ...infos)
-
-  // console.time('ts')
-
-  const list = await window.lx.worker.main.createSortedList(toRaw(targetList), position, ids)
+  const list = await createSortedList(toRaw(targetList), position, ids)
   markRawList(list)
   targetList.splice(0, targetList.length)
   arrPush(targetList, list)
 
-  // console.timeEnd('ts')
   return [listId]
 }

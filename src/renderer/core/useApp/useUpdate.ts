@@ -1,14 +1,14 @@
 import { nextTick, onBeforeUnmount, watch } from '@common/utils/vueTools'
 import {
-  onUpdateAvailable,
-  onUpdateDownloaded,
-  onUpdateError,
-  onUpdateNotAvailable,
-  onUpdateProgress,
-  getIgnoreVersion,
-  getLastStartInfo,
-  saveLastStartInfo,
-} from '@renderer/utils/ipc'
+  getRuntimeIgnoreVersion,
+  getRuntimeLastStartInfo,
+  saveRuntimeLastStartInfo,
+  subscribeRuntimeUpdateAvailable,
+  subscribeRuntimeUpdateDownloaded,
+  subscribeRuntimeUpdateError,
+  subscribeRuntimeUpdateNotAvailable,
+  subscribeRuntimeUpdateProgress,
+} from '@renderer/platform/update'
 import { compareVer, isWin } from '@common/utils'
 import { isShowChangeLog, versionInfo } from '@renderer/store'
 import { getVersionInfo } from '@renderer/utils/update'
@@ -45,9 +45,9 @@ export default () => {
 
   const handleShowChangeLog = () => {
     isShowedChangeLog = true
-    void getLastStartInfo().then((version) => {
+    void getRuntimeLastStartInfo().then((version) => {
       if (version == process.versions.app) return
-      saveLastStartInfo(process.versions.app)
+      saveRuntimeLastStartInfo(process.versions.app)
       if (!appSetting['common.showChangeLog']) return
       if (version) {
         if (compareVer(process.versions.app, version) < 0) {
@@ -118,7 +118,7 @@ export default () => {
         return
       }
 
-      return getIgnoreVersion().then((ignoreVersion) => {
+      return getRuntimeIgnoreVersion().then((ignoreVersion) => {
         versionInfo.isLatest = false
         let preStatus = versionInfo.status
         if (status) versionInfo.status = status
@@ -143,7 +143,7 @@ export default () => {
     })
   }
 
-  const rUpdateAvailable = onUpdateAvailable(({ params: info }) => {
+  const rUpdateAvailable = subscribeRuntimeUpdateAvailable(({ params: info }) => {
     // versionInfo.isDownloading = true
     // console.log(info)
     versionInfo.newVersion = {
@@ -159,7 +159,7 @@ export default () => {
       showUpdateModal()
     })
   })
-  const rUpdateNotAvailable = onUpdateNotAvailable(({ params: info }) => {
+  const rUpdateNotAvailable = subscribeRuntimeUpdateNotAvailable(({ params: info }) => {
     clearUpdateTimeout()
     // versionInfo.newVersion = {
     //   version: info.version,
@@ -172,17 +172,17 @@ export default () => {
       handleShowChangeLog()
     })
   })
-  const rUpdateError = onUpdateError((params) => {
+  const rUpdateError = subscribeRuntimeUpdateError((params) => {
     clearUpdateTimeout()
     // versionInfo.status = 'error'
     void nextTick(() => {
       showUpdateModal('error')
     })
   })
-  const rUpdateProgress = onUpdateProgress(({ params: progress }) => {
+  const rUpdateProgress = subscribeRuntimeUpdateProgress(({ params: progress }) => {
     versionInfo.downloadProgress = progress
   })
-  const rUpdateDownloaded = onUpdateDownloaded(({ params: info }) => {
+  const rUpdateDownloaded = subscribeRuntimeUpdateDownloaded(({ params: info }) => {
     clearUpdateTimeout()
     // versionInfo.status = 'downloaded'
     void nextTick(() => {

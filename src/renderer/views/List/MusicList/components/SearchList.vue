@@ -41,6 +41,7 @@
 import { debounce } from '@common/utils'
 import { clipboardReadText } from '@common/utils/electron'
 import { toRaw } from '@common/utils/vueTools'
+import { searchListMusic } from '@renderer/platform/list'
 
 export default {
   props: {
@@ -213,7 +214,7 @@ export default {
     },
     async handleSearch() {
       if (!this.text.length) return this.resultList = []
-      this.resultList = await window.lx.worker.main.searchListMusic(toRaw(this.list), this.text)
+      this.resultList = await searchListMusic(toRaw(this.list), this.text)
     },
   },
 }

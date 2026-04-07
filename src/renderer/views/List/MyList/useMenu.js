@@ -3,6 +3,7 @@ import { useI18n } from '@renderer/plugins/i18n'
 import { userLists, defaultList, loveList } from '@renderer/store/list/state'
 import musicSdk from '@renderer/utils/musicSdk'
 import { addLocalFile } from './actions'
+import { supportsListImportExport, supportsLocalMusic } from '@renderer/platform/runtime'
 
 export default ({
   emit,
@@ -48,11 +49,11 @@ export default ({
         action: 'duplicate',
         disabled: !menuControl.duplicate,
       },
-      {
+      ...(supportsLocalMusic ? [{
         name: t('lists__select_local_file'),
         action: 'local_file',
         disabled: !menuControl.local_file,
-      },
+      }] : []),
       {
         name: t('lists__sync'),
         action: 'sync',
@@ -63,16 +64,15 @@ export default ({
         action: 'sourceDetail',
         disabled: !menuControl.sourceDetail,
       },
-      {
+      ...(supportsListImportExport ? [{
         name: t('lists__import'),
         action: 'import',
-        disabled: !menuControl.export,
-      },
-      {
+        disabled: !menuControl.import,
+      }, {
         name: t('lists__export'),
         action: 'export',
         disabled: !menuControl.export,
-      },
+      }] : []),
       {
         name: t('lists__remove'),
         action: 'remove',
@@ -113,6 +113,7 @@ export default ({
         break
     }
     // menuControl.sort = !!getList(this.getTargetListInfo(index)?.id).length
+    menuControl.local_file = supportsLocalMusic
     menuControl.sourceDetail = assertSupportDetail(source, index)
 
     menuLocation.x = event.pageX

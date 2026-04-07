@@ -8,6 +8,7 @@
 import { encodePath, isUrl } from '@common/utils/common'
 import { joinPath } from '@common/utils/nodejs'
 import { markRaw, shallowReactive } from '@common/utils/vueTools'
+import defaultSetting from '@common/defaultSetting'
 import { getThemes as getTheme } from '@renderer/utils/ipc'
 import { qualityList, themeInfo, themeShouldUseDarkColors } from './index'
 
@@ -30,6 +31,22 @@ export const getThemes = (callback: (themeInfo: LX.ThemeInfo) => void) => {
     themeInfo.themes = markRaw(info.themes)
     themeInfo.userThemes = shallowReactive(info.userThemes)
     themeInfo.dataPath = info.dataPath
+    callback(themeInfo)
+  }).catch(() => {
+    const defaultThemeId = defaultSetting['theme.id']
+    themeInfo.themes = markRaw([])
+    themeInfo.userThemes = shallowReactive([{
+      id: defaultThemeId,
+      name: defaultThemeId,
+      isCustom: false,
+      config: {
+        extInfo: {
+          '--background-image': 'none',
+        },
+        themeColors: {},
+      },
+    } as LX.Theme])
+    themeInfo.dataPath = ''
     callback(themeInfo)
   })
 }
@@ -75,8 +92,9 @@ export const applyTheme = (id: string, lightId: string, darkId: string, dataPath
     let theme = findTheme(themeInfo, themeId)
     if (!theme) {
       themeId = id == 'auto' && themeShouldUseDarkColors.value ? 'black' : 'green'
-      theme = themeInfo.themes.find(theme => theme.id == themeId)!
+      theme = themeInfo.themes.find(theme => theme.id == themeId) ?? themeInfo.userThemes[0]
     }
+    if (!theme) return
     window.setTheme(buildThemeColors(theme, dataPath))
   })
 }

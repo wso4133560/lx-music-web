@@ -1,24 +1,19 @@
-import { checkUpdate, getEnvParams, getViewPrevState, sendInited } from '@renderer/utils/ipc'
-
 import { proxy, isFullscreen, themeId } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
+import { getRuntimeEnvParams, getRuntimeViewPrevState, notifyRuntimeInited, triggerRuntimeUpdateCheck } from '@renderer/platform/app'
 
 import useSync from './useSync'
-import useOpenAPI from './useOpenAPI'
-import useStatusbarLyric from './useStatusbarLyric'
-import useUpdate from './useUpdate'
 import useDataInit from './useDataInit'
 import useHandleEnvParams from './useHandleEnvParams'
 import useEventListener from './useEventListener'
-import useDeeplink from './useDeeplink'
 import usePlayer from './usePlayer'
 import useSettingSync from './useSettingSync'
 import { useRouter } from '@common/utils/vueRouter'
 import handleListAutoUpdate from './listAutoUpdate'
 
+const isWebRuntime = !(window as any).require?.('electron')
 
 export default () => {
-  // apiSource.value = appSetting['common.apiSource']
   proxy.enable = appSetting['network.proxy.enable']
   proxy.host = appSetting['network.proxy.host']
   proxy.port = appSetting['network.proxy.port']
@@ -27,27 +22,40 @@ export default () => {
 
   const router = useRouter()
   const initSyncService = useSync()
-  const initOpenAPI = useOpenAPI()
-  const initStatusbarLyric = useStatusbarLyric()
   useEventListener()
   const initPlayer = usePlayer()
   const handleEnvParams = useHandleEnvParams()
   const initData = useDataInit()
-  const initDeeplink = useDeeplink()
-  // const handleListAutoUpdate = useListAutoUpdate()
-
-  useUpdate()
   useSettingSync()
 
-  void getEnvParams().then(envParams => {
-    // 移除代理相关的环境变量设置，防止请求库自动应用它们
-    // eslint-disable-next-line no-undef
-    // const processEnv = ENVIRONMENT
-    // for (const key of Object.keys(processEnv)) {
-    //   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    //   if (/^(?:http_proxy|https_proxy|NO_PROXY)$/i.test(key)) delete processEnv[key]
-    // }
-    const envProxy = envParams.cmdParams['proxy-server']
+  void getRuntimeEnvParams().then(async envParams => {
+    let initDeeplink = async(_envParams: LX.EnvParams) => {}
+    let initOpenAPI = async() => {}
+    let initStatusbarLyric = async() => {}
+
+    if (!isWebRuntime) {
+      const [
+        { default: useDeeplink },
+        { default: useOpenAPI },
+        { default: useStatusbarLyric },
+        { default: useUpdate },
+      ] = await Promise.all([
+        import('./useDeeplink'),
+        import('./useOpenAPI'),
+        import('./useStatusbarLyric'),
+        import('./useUpdate'),
+      ])
+      initDeeplink = useDeeplink()
+      initOpenAPI = useOpenAPI()
+      initStatusbarLyric = useStatusbarLyric()
+      useUpdate()
+    }
+
+    const safeEnvParams = envParams ?? {
+      cmdParams: {},
+      deeplink: null,
+    } as LX.EnvParams
+    const envProxy = safeEnvParams.cmdParams['proxy-server']
     if (envProxy && typeof envProxy == 'string') {
       const [host, port = ''] = envProxy.split(':')
       proxy.envProxy = {
@@ -56,22 +64,24 @@ export default () => {
       }
     }
 
-    void getViewPrevState().then(state => {
+    void getRuntimeViewPrevState().then(state => {
+      if (!state?.url) return
       void router.push({ path: state.url, query: state.query })
     })
 
-    // 初始化我的列表、下载列表等数据
     void initData().then(() => {
       initPlayer()
-      handleEnvParams(envParams) // 处理传入的启动参数
-      void initDeeplink(envParams)
+      handleEnvParams(safeEnvParams)
       void initSyncService()
-      void initOpenAPI()
-      void initStatusbarLyric()
-      sendInited()
+      if (!isWebRuntime) {
+        void initDeeplink(safeEnvParams)
+        void initOpenAPI()
+        void initStatusbarLyric()
+        notifyRuntimeInited()
+        if (window.lx.isProd && appSetting['common.isAgreePact']) triggerRuntimeUpdateCheck()
+      }
 
       handleListAutoUpdate()
-      if (window.lx.isProd && appSetting['common.isAgreePact']) checkUpdate()
     })
   })
 }

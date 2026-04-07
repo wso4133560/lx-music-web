@@ -15,7 +15,7 @@ export const setSearchText = (text: string) => {
 
 let isInitedSearchHistory = false
 const saveSearchHistoryListThrottle = throttle((list: LX.List.SearchHistoryList) => {
-  saveSearchHistoryList(list)
+  void saveSearchHistoryList(list)
 }, 500)
 
 
@@ -38,7 +38,7 @@ export const removeHistoryWord = (index: number) => {
   historyList.splice(index, 1)
   saveSearchHistoryListThrottle(toRaw(historyList))
 }
-export const clearHistoryList = (id: string) => {
+export const clearHistoryList = () => {
   historyList.splice(0, historyList.length)
-  saveSearchHistoryList([])
+  void saveSearchHistoryList([])
 }

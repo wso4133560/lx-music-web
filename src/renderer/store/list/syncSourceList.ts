@@ -4,6 +4,8 @@ import { getListDetailAll } from '@renderer/store/songList/action'
 import { getListDetailAll as getBoardListAll } from '@renderer/store/leaderboard/action'
 import { dateFormat } from '@common/utils/common'
 
+const isWebRuntime = !(window as any).require?.('electron')
+
 const fetchList = async(id: string, source: LX.OnlineSource, sourceListId: string) => {
   setFetchingListStatus(id, true)
 
@@ -20,10 +22,9 @@ const fetchList = async(id: string, source: LX.OnlineSource, sourceListId: strin
 }
 
 export default async(targetListInfo: LX.List.UserListInfo) => {
-  // console.log(targetListInfo)
+  if (isWebRuntime) return
   if (!targetListInfo.source || !targetListInfo.sourceListId) return
   const list = await fetchList(targetListInfo.id, targetListInfo.source, targetListInfo.sourceListId)
-  // console.log(list)
   void overwriteListMusics({ listId: targetListInfo.id, musicInfos: list })
   const now = Date.now()
   void setListUpdateTime(targetListInfo.id, now)

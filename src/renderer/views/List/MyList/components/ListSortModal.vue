@@ -74,6 +74,7 @@
 import { ref, computed } from '@common/utils/vueTools'
 // import { dialog } from '@renderer/plugins/Dialog'
 import { getListMusics, updateListMusicsPosition } from '@renderer/store/list/action'
+import { sortListMusicInfo } from '@renderer/platform/list'
 import { useI18n } from '@root/lang'
 import { LIST_IDS } from '@common/constants'
 
@@ -113,7 +114,7 @@ export default {
       // })) return
 
       let list = [...(await getListMusics(props.listInfo.id))]
-      list = await window.lx.worker.main.sortListMusicInfo(list, sortType.value, sortField.value, window.i18n.locale)
+      list = await sortListMusicInfo(list, sortType.value, sortField.value, window.i18n.locale)
       console.log(sortType.value, sortField.value)
 
       closeModal()

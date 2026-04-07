@@ -1,11 +1,13 @@
 import { toRaw } from '@common/utils/vueTools'
-import { openSaveDir, showSelectDialog } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
 import { filterFileName, toNewMusicInfo, fixNewMusicInfoQuality, filterMusicList } from '@renderer/utils'
 import { getListMusics, updateUserList, addListMusics, overwriteListMusics, createUserList } from '@renderer/store/list/action'
 import { defaultList, loveList, userLists } from '@renderer/store/list/state'
 import useImportTip from '@renderer/utils/compositions/useImportTip'
 import { dialog } from '@renderer/plugins/Dialog'
+import { supportsListImportExport } from '@renderer/platform/runtime'
+import { readConfigFile, saveConfigFile } from '@renderer/platform/desktopFiles'
+import { selectFiles, selectSaveFile } from '@renderer/platform/system'
 
 
 export default () => {
@@ -13,20 +15,21 @@ export default () => {
   const showImportTip = useImportTip()
 
   const handleExportList = (listInfo: LX.List.MyListInfo) => {
-    if (!listInfo) return
-    void openSaveDir({
+    if (!listInfo || !supportsListImportExport) return
+    void selectSaveFile({
       title: t('lists__export_part_desc'),
       defaultPath: `lx_list_part_${filterFileName(listInfo.name)}.lxmc`,
     }).then(async result => {
       if (result.canceled || !result.filePath) return
-      void window.lx.worker.main.saveLxConfigFile(result.filePath, {
+      void saveConfigFile(result.filePath, {
         type: 'playListPart_v2',
         data: { ...toRaw(listInfo), list: toRaw(await getListMusics(listInfo.id)) },
       })
     })
   }
   const handleImportList = (listInfo: LX.List.MyListInfo, index: number) => {
-    void showSelectDialog({
+    if (!supportsListImportExport) return
+    void selectFiles({
       title: t('lists__import_part_desc'),
       properties: ['openFile'],
       filters: [
@@ -39,7 +42,7 @@ export default () => {
       if (!filePath) return
       let configData: any
       try {
-        configData = await window.lx.worker.main.readLxConfigFile(filePath)
+        configData = await readConfigFile(filePath)
       } catch (error) {
         return
       }

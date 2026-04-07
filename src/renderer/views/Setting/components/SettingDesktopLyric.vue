@@ -97,11 +97,11 @@ dd
 
 <script>
 import { ref, computed, onMounted, onBeforeUnmount } from '@common/utils/vueTools'
-import { getSystemFonts } from '@renderer/utils/ipc'
 import { isLinux } from '@common/utils'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { useI18n } from '@renderer/plugins/i18n'
 import { pickrTools } from '@renderer/utils/pickrTools'
+import { getAvailableSystemFonts } from '@renderer/platform/system'
 
 const defaultUnplayColors = [
   'rgba(255, 255, 255, 1)',
@@ -274,7 +274,7 @@ export default {
     const fontList = computed(() => {
       return [{ id: '', label: t('setting__desktop_lyric_font_default') }, ...systemFontList.value]
     })
-    void getSystemFonts().then(fonts => {
+    void getAvailableSystemFonts().then(fonts => {
       systemFontList.value = fonts.map(f => ({ id: f, label: f.replace(/(^"|"$)/g, '') }))
     })
 

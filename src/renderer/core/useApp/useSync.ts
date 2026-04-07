@@ -1,10 +1,30 @@
 import { markRaw, onBeforeUnmount } from '@common/utils/vueTools'
-import { onSyncAction, sendSyncAction } from '@renderer/utils/ipc'
 import { sync } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
 import { SYNC_CODE } from '@common/constants_sync'
+import { getSyncSnapshot, requestSyncAction, subscribeSyncActions } from '@renderer/platform/sync'
+
+const isWebRuntime = !(window as any).require?.('electron')
 
 export default () => {
+  const applySyncSnapshot = ({ server, client }: {
+    server: LX.Sync.ServerStatus
+    client: LX.Sync.ClientStatus
+  }) => {
+    sync.server.status.status = server.status
+    sync.server.status.message = server.message
+    sync.server.status.address = markRaw(server.address)
+    sync.server.status.code = server.code
+    sync.server.status.devices = markRaw(server.devices)
+
+    sync.client.status.status = client.status
+    sync.client.status.message = client.message
+    sync.client.status.address = markRaw(client.address)
+    if (client.message == SYNC_CODE.missingAuthCode || client.message == SYNC_CODE.authFailed) {
+      if (!sync.isShowAuthCodeModal) sync.isShowAuthCodeModal = true
+    } else if (sync.isShowAuthCodeModal) sync.isShowAuthCodeModal = false
+  }
+
   const handleSyncList = (event: LX.Sync.SyncMainWindowActions) => {
     // console.log(event)
     switch (event.action) {
@@ -34,9 +54,9 @@ export default () => {
     }
   }
 
-  const rSyncAction = onSyncAction(({ params }) => {
-    handleSyncList(params)
-  })
+  const rSyncAction = subscribeSyncActions(({ params }) => {
+      handleSyncList(params)
+    })
 
   onBeforeUnmount(() => {
     rSyncAction()
@@ -47,37 +67,42 @@ export default () => {
     sync.mode = appSetting['sync.mode']
     sync.server.port = appSetting['sync.server.port']
     sync.client.host = appSetting['sync.client.host']
-    if (appSetting['sync.enable']) {
+    try {
+      applySyncSnapshot(await getSyncSnapshot())
+    } catch (err) {
+      console.log(err)
+    }
+    if (isWebRuntime || !appSetting['sync.enable']) return
+    try {
       switch (appSetting['sync.mode']) {
         case 'server':
           if (appSetting['sync.server.port']) {
-            void sendSyncAction({
+            await requestSyncAction({
               action: 'enable_server',
               data: {
                 enable: appSetting['sync.enable'],
                 port: appSetting['sync.server.port'],
               },
-            }).catch(err => {
-              console.log(err)
             })
           }
           break
         case 'client':
           if (appSetting['sync.client.host']) {
-            void sendSyncAction({
+            await requestSyncAction({
               action: 'enable_client',
               data: {
                 enable: appSetting['sync.enable'],
                 host: appSetting['sync.client.host'],
               },
-            }).catch(err => {
-              console.log(err)
             })
           }
           break
         default:
           break
       }
+      applySyncSnapshot(await getSyncSnapshot())
+    } catch (err) {
+      console.log(err)
     }
   }
 }

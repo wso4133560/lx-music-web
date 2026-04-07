@@ -47,7 +47,12 @@ import ControlBtnsLeftHeader from './ControlBtnsLeftHeader.vue'
 import ControlBtnsRightHeader from './ControlBtnsRightHeader.vue'
 import { registerAutoHideMounse, unregisterAutoHideMounse } from './autoHideMounse'
 import { appSetting } from '@renderer/store/setting'
-import { closeWindow, maxWindow, minWindow, setFullScreen } from '@renderer/utils/ipc'
+import {
+  closeRuntimeWindow as closeWindow,
+  maxRuntimeWindow as maxWindow,
+  minRuntimeWindow as minWindow,
+  setRuntimeFullScreen as setFullScreen,
+} from '@renderer/platform/window'
 
 export default {
   name: 'CorePlayDetail',

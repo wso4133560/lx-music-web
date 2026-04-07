@@ -21,8 +21,8 @@ material-modal(:show="modelValue" bg-close teleport="#view" @close="$emit('updat
 <script>
 import { watch, ref } from '@common/utils/vueTools'
 import { sync } from '@renderer/store'
-import { getSyncServerDevices, removeSyncServerDevice } from '@renderer/utils/ipc'
 import { dateFormat } from '@common/utils/common'
+import { listSyncServerDevices, removeSyncServerDevice } from '@renderer/platform/sync'
 
 export default {
   props: {
@@ -36,7 +36,7 @@ export default {
     const historyDeviceList = ref([])
 
     const getList = () => {
-      void getSyncServerDevices().then((list) => {
+      void listSyncServerDevices().then((list) => {
         historyDeviceList.value = list.map(d => {
           return {
             id: d.clientId,
@@ -45,6 +45,8 @@ export default {
             isMobile: d.isMobile,
           }
         })
+      }).catch(err => {
+        console.log(err)
       })
     }
 
@@ -58,7 +60,9 @@ export default {
     })
 
     const handleRemove = (index) => {
-      void removeSyncServerDevice(historyDeviceList.value[index].id).then(getList)
+      void removeSyncServerDevice(historyDeviceList.value[index].id).then(getList).catch(err => {
+        console.log(err)
+      })
     }
 
     return {

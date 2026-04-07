@@ -7,8 +7,8 @@
       <layout-play-bar id="player" />
     </div>
     <layout-icons />
-    <layout-change-log-modal />
-    <layout-update-modal />
+    <layout-change-log-modal v-if="supportsAppUpdates" />
+    <layout-update-modal v-if="supportsAppUpdates" />
     <layout-pact-modal />
     <layout-sync-mode-modal />
     <layout-sync-auth-code-modal />
@@ -18,6 +18,7 @@
 
 <script setup>
 import { onMounted } from '@common/utils/vueTools'
+import { supportsAppUpdates } from '@renderer/platform/runtime'
 // import BubbleCursor from '@common/utils/effects/cursor-effects/bubbleCursor'
 // import '@common/utils/effects/snow.min'
 import useApp from '@renderer/core/useApp'
@@ -165,4 +166,3 @@ body {
 }
 
 </style>
-

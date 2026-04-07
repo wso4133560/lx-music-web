@@ -1,12 +1,12 @@
 import { watch } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
-import { sendOpenAPIAction } from '@renderer/utils/ipc'
 import { openAPI } from '@renderer/store'
 import { setDisableAutoPauseBySource } from '@renderer/core/lyric'
+import { sendRuntimeOpenAPIAction } from '@renderer/platform/openapi'
 
 export default () => {
   const handleEnable = async(enable: boolean, port: string, bindLan: boolean) => {
-    await sendOpenAPIAction({
+    await sendRuntimeOpenAPIAction({
       action: 'enable',
       data: {
         enable,

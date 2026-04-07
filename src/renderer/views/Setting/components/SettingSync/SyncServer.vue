@@ -19,11 +19,11 @@ dd
 <script>
 import { computed, ref } from '@common/utils/vueTools'
 import { sync } from '@renderer/store'
-import { sendSyncAction } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { debounce } from '@common/utils/common'
 import ServerDeviceListModal from './ServerDeviceListModal.vue'
+import { requestSyncAction } from '@renderer/platform/sync'
 
 export default {
   name: 'SettingSyncServer',
@@ -52,7 +52,9 @@ export default {
     })
 
     const refreshSyncCode = () => {
-      void sendSyncAction({ action: 'generate_code' })
+      void requestSyncAction({ action: 'generate_code' }).catch(err => {
+        console.log(err)
+      })
     }
 
     const setSyncServerPort = debounce(port => {

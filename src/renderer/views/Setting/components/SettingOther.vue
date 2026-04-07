@@ -70,12 +70,17 @@ dd
 <script>
 import { ref, computed } from '@common/utils/vueTools'
 import {
-  clearCache, getCacheSize,
-  getOtherSourceCount, clearOtherSource,
-  getMusicUrlCount, clearMusicUrl,
-  getLyricRawCount, clearLyricRaw,
-  getLyricEditedCount, clearLyricEdited,
-} from '@renderer/utils/ipc'
+  clearLyricEditedCache,
+  clearLyricRawCache,
+  clearMusicUrlCache,
+  clearOtherSourceCache,
+  clearResourceCache as clearPlatformResourceCache,
+  getLyricEditedCacheCount,
+  getLyricRawCacheCount,
+  getMusicUrlCacheCount,
+  getOtherSourceCacheCount,
+  getResourceCacheSize,
+} from '@renderer/platform/cache'
 import { sizeFormate } from '@common/utils/common'
 import { dialog } from '@renderer/plugins/Dialog'
 import { useI18n } from '@renderer/plugins/i18n'
@@ -106,7 +111,7 @@ export default {
     const isDisabledResourceCacheClear = ref(false)
     // const isDisabledListCacheClear = ref(false)
     const refreshCacheSize = () => {
-      void getCacheSize().then(size => {
+      void getResourceCacheSize().then(size => {
         cacheSize.value = sizeFormate(size)
       })
     }
@@ -117,7 +122,7 @@ export default {
         confirmButtonText: t('setting__other_resource_cache_confirm'),
       })) return
       isDisabledResourceCacheClear.value = true
-      void clearCache().then(() => {
+      void clearPlatformResourceCache().then(() => {
         refreshCacheSize()
         isDisabledResourceCacheClear.value = false
       })
@@ -128,13 +133,13 @@ export default {
     const otherSourceCount = ref(0)
     const isDisabledOtherSourceCacheClear = ref(false)
     const refreshOtherSourceCount = () => {
-      void getOtherSourceCount().then(count => {
+      void getOtherSourceCacheCount().then(count => {
         otherSourceCount.value = count
       })
     }
     const handleClearOtherSourceCache = async() => {
       isDisabledOtherSourceCacheClear.value = true
-      void clearOtherSource().then(() => {
+      void clearOtherSourceCache().then(() => {
         refreshOtherSourceCount()
         isDisabledOtherSourceCacheClear.value = false
       })
@@ -145,13 +150,13 @@ export default {
     const musicUrlCount = ref(0)
     const isDisabledMusicUrlCacheClear = ref(false)
     const refreshMusicUrlCount = () => {
-      void getMusicUrlCount().then(count => {
+      void getMusicUrlCacheCount().then(count => {
         musicUrlCount.value = count
       })
     }
     const handleClearMusicUrlCache = async() => {
       isDisabledMusicUrlCacheClear.value = true
-      void clearMusicUrl().then(() => {
+      void clearMusicUrlCache().then(() => {
         refreshMusicUrlCount()
         isDisabledMusicUrlCacheClear.value = false
       })
@@ -163,13 +168,13 @@ export default {
     const lyricRawCount = ref(0)
     const isDisabledLyricRawCacheClear = ref(false)
     const refreshLyricRawCount = () => {
-      void getLyricRawCount().then(count => {
+      void getLyricRawCacheCount().then(count => {
         lyricRawCount.value = count
       })
     }
     const handleClearLyricRawCache = async() => {
       isDisabledLyricRawCacheClear.value = true
-      void clearLyricRaw().then(() => {
+      void clearLyricRawCache().then(() => {
         refreshLyricRawCount()
         isDisabledLyricRawCacheClear.value = false
       })
@@ -180,7 +185,7 @@ export default {
     const lyricEditedCount = ref(0)
     const isDisabledLyricEditedCacheClear = ref(false)
     const refreshLyricEditedCount = () => {
-      void getLyricEditedCount().then(count => {
+      void getLyricEditedCacheCount().then(count => {
         lyricEditedCount.value = count
       })
     }
@@ -191,7 +196,7 @@ export default {
         confirmButtonText: t('setting__other_resource_cache_confirm'),
       })) return
       isDisabledLyricEditedCacheClear.value = true
-      void clearLyricEdited().then(() => {
+      void clearLyricEditedCache().then(() => {
         refreshLyricEditedCount()
         isDisabledLyricEditedCacheClear.value = false
       })

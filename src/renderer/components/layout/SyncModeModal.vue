@@ -93,7 +93,7 @@
 <script>
 import { ref } from '@common/utils/vueTools'
 import { sync } from '@renderer/store'
-import { sendSyncAction } from '@renderer/utils/ipc'
+import { requestSyncAction } from '@renderer/platform/sync'
 
 export default {
   setup() {
@@ -105,7 +105,9 @@ export default {
       if (sync.type == 'list') {
         if (mode.startsWith('overwrite') && isOverwrite.value) mode += '_full'
       }
-      void sendSyncAction({ action: 'select_mode', data: { type: sync.type, mode } })
+      void requestSyncAction({ action: 'select_mode', data: { type: sync.type, mode } }).catch(err => {
+        console.log(err)
+      })
       handleClose()
     }
     return {

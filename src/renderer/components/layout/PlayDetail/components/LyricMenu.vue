@@ -48,17 +48,17 @@
 import { computed, ref, watch } from '@common/utils/vueTools'
 import useMenuLocation from '@renderer/utils/compositions/useMenuLocation'
 import { debounce } from '@common/utils/common'
-import { saveLyricEdited, removeLyricEdited } from '@renderer/utils/ipc'
+import { saveEditedLyric, removeEditedLyric } from '@renderer/platform/lyric'
 import { appSetting, setPlayDetailLyricFont, setPlayDetailLyricAlign } from '@renderer/store/setting'
 
 const offsetTagRxp = /(?:^|\n)\s*\[offset:\s*(\S+(?:\d+)*)\s*\]/
 const offsetTagAllRxp = /(^|\n)\s*\[offset:\s*(\S+(?:\d+)*)\s*\]/g
 
 const saveLyric = debounce((musicInfo, lyricInfo) => {
-  void saveLyricEdited(musicInfo, lyricInfo)
+  void saveEditedLyric(musicInfo, lyricInfo)
 })
 const removeLyric = debounce(musicInfo => {
-  void removeLyricEdited(musicInfo)
+  void removeEditedLyric(musicInfo)
 })
 
 const getOffset = lrc => {
@@ -293,4 +293,3 @@ export default {
 }
 
 </style>
-

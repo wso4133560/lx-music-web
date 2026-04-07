@@ -3,7 +3,8 @@ import { toRaw, markRawList } from '@common/utils/vueTools'
 import { clearPlayedList } from '@renderer/store/player/action'
 import { appSetting } from '@renderer/store/setting'
 import { dislikeInfo } from '@renderer/store/dislikeList'
-import { setPowerSaveBlocker as setPowerSaveBlockerRemote } from '@renderer/utils/ipc'
+import { filterPlayableMusicList } from '@renderer/platform/list'
+import { setPlatformPowerSaveBlocker } from '@renderer/platform/system'
 
 // export const getPlayType = (highQuality: boolean, musicInfo: LX.Music.MusicInfo | LX.Download.ListItem): LX.Quality | null => {
 //   if ('progress' in musicInfo || musicInfo.source == 'local') return null
@@ -25,7 +26,7 @@ export const filterList = async({ playedList, listId, list, playerMusicInfo, isN
 }) => {
   // if (this.list.listName === null) return
   // console.log(isCheckFile)
-  let { filteredList, canPlayList, playerIndex } = await window.lx.worker.main.filterMusicList({
+  const { filteredList, canPlayList, playerIndex } = await filterPlayableMusicList({
     listId,
     list: list.map(m => toRaw(m)),
     playedList: toRaw(playedList),
@@ -52,14 +53,14 @@ export const setPowerSaveBlocker = (enabled: boolean, force = false) => {
   if (enabled) {
     clearTimer()
     if (!force && !appSetting['player.powerSaveBlocker']) return
-    setPowerSaveBlockerRemote(true)
+    setPlatformPowerSaveBlocker(true)
   } else if (force) {
     clearTimer()
-    setPowerSaveBlockerRemote(false)
+    setPlatformPowerSaveBlocker(false)
   } else {
     if (timeout) return
     timeout = setTimeout(() => {
-      setPowerSaveBlockerRemote(false)
+      setPlatformPowerSaveBlocker(false)
     }, 60_000 * 1.5)
   }
 }

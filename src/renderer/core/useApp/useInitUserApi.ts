@@ -1,11 +1,17 @@
 import { onBeforeUnmount, watch } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
-import { onUserApiStatus, getUserApiList, sendUserApiRequest as sendUserApiRequestRemote, userApiRequestCancel, onShowUserApiUpdateAlert } from '@renderer/utils/ipc'
 import { openUrl } from '@common/utils/electron'
 import { qualityList, userApi } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
 import { dialog } from '@renderer/plugins/Dialog'
 import { setUserApi } from '@renderer/core/apiSource'
+import {
+  cancelRuntimeUserApiRequest,
+  getRuntimeUserApiList,
+  sendRuntimeUserApiRequest as sendUserApiRequestRemote,
+  subscribeRuntimeUserApiStatus,
+  subscribeRuntimeUserApiUpdateAlert,
+} from '@renderer/platform/userApi'
 
 const sendUserApiRequest: typeof sendUserApiRequestRemote = async(data) => {
   let stop: () => void
@@ -22,7 +28,7 @@ const sendUserApiRequest: typeof sendUserApiRequestRemote = async(data) => {
 export default () => {
   const t = useI18n()
 
-  const rUserApiStatus = onUserApiStatus(({ params: { status, message, apiInfo } }) => {
+  const rUserApiStatus = subscribeRuntimeUserApiStatus(({ params: { status, message, apiInfo } }) => {
     // console.log({ status, message, apiInfo })
     userApi.status = status
     userApi.message = message
@@ -42,7 +48,7 @@ export default () => {
                   const requestKey = `request__${Math.random().toString().substring(2)}`
                   return {
                     canceleFn() {
-                      userApiRequestCancel(requestKey)
+                      cancelRuntimeUserApiRequest(requestKey)
                     },
                     promise: sendUserApiRequest({
                       requestKey,
@@ -70,7 +76,7 @@ export default () => {
                   const requestKey = `request__${Math.random().toString().substring(2)}`
                   return {
                     canceleFn() {
-                      userApiRequestCancel(requestKey)
+                      cancelRuntimeUserApiRequest(requestKey)
                     },
                     promise: sendUserApiRequest({
                       requestKey,
@@ -98,7 +104,7 @@ export default () => {
                   const requestKey = `request__${Math.random().toString().substring(2)}`
                   return {
                     canceleFn() {
-                      userApiRequestCancel(requestKey)
+                      cancelRuntimeUserApiRequest(requestKey)
                     },
                     promise: sendUserApiRequest({
                       requestKey,
@@ -142,7 +148,7 @@ export default () => {
     if (!window.lx.apiInitPromise[1]) window.lx.apiInitPromise[2](status)
   })
 
-  const rUserApiShowUpdateAlert = onShowUserApiUpdateAlert(({ params: { name, log, updateUrl } }) => {
+  const rUserApiShowUpdateAlert = subscribeRuntimeUserApiUpdateAlert(({ params: { name, log, updateUrl } }) => {
     if (updateUrl) {
       void dialog({
         message: `${t('user_api__update_alert', { name })}\n${log}`,
@@ -172,7 +178,7 @@ export default () => {
 
   return async() => {
     await setUserApi(appSetting['common.apiSource'])
-    void getUserApiList().then(list => {
+    void getRuntimeUserApiList().then(list => {
       // console.log(list)
       // if (![...apiSourceInfo.map(s => s.id), ...list.map(s => s.id)].includes(appSetting['common.apiSource'])) {
       //   console.warn('reset api')

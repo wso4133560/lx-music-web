@@ -1,16 +1,35 @@
 import { watch } from '@common/utils/vueTools'
 import { isFullscreen, proxy, sync, windowSizeList } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
-import { sendSyncAction, setWindowSize } from '@renderer/utils/ipc'
+import { setPlatformWindowSize } from '@renderer/platform/system'
 import { setLanguage } from '@root/lang'
 import { setUserApi } from '../apiSource'
+import { getSyncSnapshot, requestSyncAction } from '@renderer/platform/sync'
 // import { applyTheme, getThemes } from '@renderer/store/utils'
 
+const isWebRuntime = !(window as any).require?.('electron')
 
 export default () => {
+  const refreshSyncStatus = async() => {
+    try {
+      const { server, client } = await getSyncSnapshot()
+      sync.server.status.status = server.status
+      sync.server.status.message = server.message
+      sync.server.status.address = server.address
+      sync.server.status.code = server.code
+      sync.server.status.devices = server.devices
+      sync.client.status.status = client.status
+      sync.client.status.message = client.message
+      sync.client.status.address = client.address
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
   watch(() => appSetting['common.windowSizeId'], (index) => {
+    if (isWebRuntime) return
     const info = index == null ? windowSizeList[2] : windowSizeList[index]
-    setWindowSize(info.width, info.height)
+    setPlatformWindowSize(info.width, info.height)
   })
   watch(() => appSetting['common.fontSize'], (fontSize) => {
     if (isFullscreen.value) return
@@ -38,58 +57,66 @@ export default () => {
   })
 
   watch(() => appSetting['sync.enable'], enable => {
-    switch (appSetting['sync.mode']) {
-      case 'server':
-        if (appSetting['sync.server.port']) {
-          void sendSyncAction({
-            action: 'enable_server',
-            data: {
-              enable: appSetting['sync.enable'],
-              port: appSetting['sync.server.port'],
-            },
-          }).catch(err => {
-            console.log(err)
-          })
-        }
-        break
-      case 'client':
-        if (appSetting['sync.client.host']) {
-          void sendSyncAction({
-            action: 'enable_client',
-            data: {
-              enable: appSetting['sync.enable'],
-              host: appSetting['sync.client.host'],
-            },
-          }).catch(err => {
-            console.log(err)
-          })
-        }
-        break
-      default:
-        break
+    if (!isWebRuntime) {
+      switch (appSetting['sync.mode']) {
+        case 'server':
+          if (appSetting['sync.server.port']) {
+            void requestSyncAction({
+              action: 'enable_server',
+              data: {
+                enable: appSetting['sync.enable'],
+                port: appSetting['sync.server.port'],
+              },
+            }).then(refreshSyncStatus).catch(err => {
+              console.log(err)
+            })
+          }
+          break
+        case 'client':
+          if (appSetting['sync.client.host']) {
+            void requestSyncAction({
+              action: 'enable_client',
+              data: {
+                enable: appSetting['sync.enable'],
+                host: appSetting['sync.client.host'],
+              },
+            }).then(refreshSyncStatus).catch(err => {
+              console.log(err)
+            })
+          }
+          break
+        default:
+          break
+      }
+    } else {
+      void refreshSyncStatus()
     }
     sync.enable = enable
   })
   watch(() => appSetting['sync.server.port'], port => {
     if (appSetting['sync.mode'] == 'server') {
-      void sendSyncAction({
+      void requestSyncAction({
         action: 'enable_server',
         data: {
           enable: appSetting['sync.enable'],
           port: appSetting['sync.server.port'],
         },
+      }).then(refreshSyncStatus).catch(err => {
+        console.log(err)
       })
     }
     sync.server.port = port
   })
   watch(() => appSetting['sync.client.host'], host => {
     if (appSetting['sync.mode'] == 'client') {
-      void sendSyncAction({
+      void requestSyncAction({
         action: 'enable_client',
         data: {
           enable: appSetting['sync.enable'],
           host: appSetting['sync.client.host'],
         },
+      }).then(refreshSyncStatus).catch(err => {
+        console.log(err)
       })
     }
     sync.client.host = host

@@ -41,6 +41,7 @@ import { playList } from '@renderer/core/player'
 import { getListMusics, removeListMusics } from '@renderer/store/list/action'
 import { isFullscreen } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
+import { filterDuplicateMusic } from '@renderer/platform/list'
 import { getFontSizeWithScreen } from '@renderer/utils'
 import { LIST_IDS } from '@common/constants'
 import { useI18n } from '@root/lang'
@@ -70,7 +71,7 @@ export default {
     }
     const handleFilterList = async() => {
       // console.time('filter')
-      duplicateList.value = markRawList(await window.lx.worker.main.filterDuplicateMusic(await getListMusics(props.listInfo.id)))
+      duplicateList.value = markRawList(await filterDuplicateMusic(await getListMusics(props.listInfo.id)))
       // console.log(duplicateList.value)
       // console.timeEnd('filter')
     }

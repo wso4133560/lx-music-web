@@ -1,12 +1,7 @@
 import { qualityList } from '@renderer/store'
 import { assertApiSupport } from '@renderer/store/utils'
 import musicSdk from '@renderer/utils/musicSdk'
-import {
-  // getOtherSource as getOtherSourceFromStore,
-  // saveOtherSource as saveOtherSourceFromStore,
-  getMusicUrl as getStoreMusicUrl,
-  getPlayerLyric as getStoreLyric,
-} from '@renderer/utils/ipc'
+import { getCachedMusicUrl, getCachedPlayerLyric } from '@renderer/platform/musicCache'
 import { appSetting } from '@renderer/store/setting'
 import { langS2T, toNewMusicInfo, toOldMusicInfo } from '@renderer/utils'
 import { requestMsg } from '@renderer/utils/message'
@@ -123,7 +118,7 @@ export const buildLyricInfo = async(lyricInfo: MakeOptional<LX.Player.LyricInfo,
 }
 
 export const getCachedLyricInfo = async(musicInfo: LX.Music.MusicInfo): Promise<LX.Player.LyricInfo | null> => {
-  let lrcInfo = await getStoreLyric(musicInfo)
+  const lrcInfo = await getCachedPlayerLyric(musicInfo)
   // lrcInfo = {} as unknown as LX.Player.LyricInfo
   if (existTimeExp.test(lrcInfo.lyric)) {
     if (lrcInfo.tlyric != null) {
@@ -165,7 +160,7 @@ export const getOnlineOtherSourceMusicUrlByLocal = async(musicInfo: LX.Music.Mus
 
   const quality = '128k'
 
-  const cachedUrl = await getStoreMusicUrl(musicInfo, quality)
+  const cachedUrl = await getCachedMusicUrl(musicInfo, quality)
   if (cachedUrl && !isRefresh) return { url: cachedUrl, quality, isFromCache: true }
 
   let reqPromise

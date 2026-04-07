@@ -1,10 +1,11 @@
 import {
-  downloadTasksGet,
-  // downloadListClear,
-  downloadTasksCreate,
-  downloadTasksRemove,
-  downloadTasksUpdate,
-} from '@renderer/utils/ipc'
+  getStoredDownloadTasks,
+  saveCreatedDownloadTasks,
+  removeStoredDownloadTasks,
+  saveUpdatedDownloadTasks,
+  createPlatformDownloadTasks,
+  startBrowserDownload,
+} from '@renderer/platform/download'
 import {
   downloadList,
 } from './state'
@@ -18,6 +19,8 @@ import { DOWNLOAD_STATUS } from '@common/constants'
 import { proxy } from '../index'
 import { buildSavePath } from './utils'
 
+const isWebRuntime = !(window as any).require?.('electron')
+
 const waitingUpdateTasks = new Map<string, LX.Download.ListItem>()
 let timer: NodeJS.Timeout | null = null
 const throttleUpdateTask = (tasks: LX.Download.ListItem[]) => {
@@ -25,7 +28,7 @@ const throttleUpdateTask = (tasks: LX.Download.ListItem[]) => {
   if (timer) return
   timer = setTimeout(() => {
     timer = null
-    void downloadTasksUpdate(Array.from(waitingUpdateTasks.values()))
+    void saveUpdatedDownloadTasks(Array.from(waitingUpdateTasks.values()))
     waitingUpdateTasks.clear()
   }, 100)
 }
@@ -38,7 +41,7 @@ const runingTask = new Map<string, LX.Download.ListItem>()
 
 export const getDownloadList = async(): Promise<LX.Download.ListItem[]> => {
   if (!downloadList.length) {
-    const list = await downloadTasksGet()
+    const list = await getStoredDownloadTasks()
     for (const downloadInfo of list) {
       markRaw(downloadInfo.metadata)
       switch (downloadInfo.status) {
@@ -58,7 +61,7 @@ export const getDownloadList = async(): Promise<LX.Download.ListItem[]> => {
 const addTasks = async(list: LX.Download.ListItem[]) => {
   const addMusicLocationType = appSetting['list.addMusicLocationType']
 
-  await downloadTasksCreate(list.map(i => toRaw(i)), addMusicLocationType)
+  await saveCreatedDownloadTasks(list.map(i => toRaw(i)), addMusicLocationType)
 
   if (addMusicLocationType === 'top') {
     arrUnshift(downloadList, list)
@@ -147,7 +150,7 @@ const getProxy = () => {
  * @param downloadInfo 下载任务信息
  */
 const saveMeta = (downloadInfo: LX.Download.ListItem) => {
-  if (downloadInfo.metadata.quality === 'ape') return
+  if (isWebRuntime || downloadInfo.metadata.quality === 'ape') return
   const isUseOtherSource = appSetting['download.isUseOtherSource']
   const tasks: [Promise<string | null>, Promise<LX.Player.LyricInfo | null>] = [
     appSetting['download.isEmbedPic']
@@ -185,7 +188,7 @@ const saveMeta = (downloadInfo: LX.Download.ListItem) => {
  * @param downloadInfo 下载任务信息
  */
 const downloadLyric = (downloadInfo: LX.Download.ListItem) => {
-  if (!appSetting['download.isDownloadLrc']) return
+  if (isWebRuntime || !appSetting['download.isDownloadLrc']) return
   void getLyricInfo({
     musicInfo: downloadInfo.metadata.musicInfo,
     isRefresh: false,
@@ -222,6 +225,7 @@ const getUrl = async(downloadInfo: LX.Download.ListItem, isRefresh: boolean = fa
   }).catch(() => '')
 }
 const handleRefreshUrl = (downloadInfo: LX.Download.ListItem) => {
+  if (isWebRuntime) return
   setStatusText(downloadInfo, window.i18n.t('download_status_error_refresh_url'))
   let toggleMusicInfo = downloadInfo.metadata.musicInfo.meta.toggleMusicInfo
   ;(toggleMusicInfo ? getMusicUrl({
@@ -250,7 +254,7 @@ const handleRefreshUrl = (downloadInfo: LX.Download.ListItem) => {
 }
 const handleError = (downloadInfo: LX.Download.ListItem, message?: string) => {
   setStatus(downloadInfo, DOWNLOAD_STATUS.ERROR, message)
-  void window.lx.worker.download.removeTask(downloadInfo.id)
+  if (!isWebRuntime) void window.lx.worker.download.removeTask(downloadInfo.id)
   runingTask.delete(downloadInfo.id)
   void checkStartTask()
 }
@@ -265,6 +269,23 @@ const handleStartTask = async(downloadInfo: LX.Download.ListItem) => {
     }
     setUrl(downloadInfo, url)
     if (downloadInfo.status != DOWNLOAD_STATUS.RUN) return
+  }
+
+  if (isWebRuntime) {
+    try {
+      await startBrowserDownload(downloadInfo)
+      downloadInfo.total = 1
+      downloadInfo.downloaded = 1
+      downloadInfo.progress = 100
+      downloadInfo.speed = ''
+      downloadInfo.writeQueue = 0
+      runingTask.delete(downloadInfo.id)
+      setStatus(downloadInfo, DOWNLOAD_STATUS.COMPLETED)
+      window.app_event.downloadListUpdate()
+    } catch (err: any) {
+      handleError(downloadInfo, err?.message ?? window.i18n.t('download___status_error'))
+    }
+    return
   }
 
   const savePath = buildSavePath(downloadInfo)
@@ -356,9 +377,11 @@ const filterTask = (list: LX.Download.ListItem[]) => {
  */
 export const createDownloadTasks = async(list: LX.Music.MusicInfoOnline[], quality: LX.Quality, listId?: string) => {
   if (!list.length) return
-  const tasks = filterTask(await window.lx.worker.download.createDownloadTasks(list, quality,
-    appSetting['download.fileName'],
-    toRaw(qualityList.value), listId),
+  const tasks = filterTask(isWebRuntime
+    ? createPlatformDownloadTasks(list, quality, appSetting['download.fileName'], toRaw(qualityList.value), listId)
+    : await window.lx.worker.download.createDownloadTasks(list, quality,
+      appSetting['download.fileName'],
+      toRaw(qualityList.value), listId),
   )
 
   if (tasks.length) await addTasks(tasks)
@@ -372,6 +395,7 @@ export const createDownloadTasks = async(list: LX.Music.MusicInfoOnline[], quali
 export const startDownloadTasks = async(list: LX.Download.ListItem[]) => {
   for (const downloadInfo of list) {
     switch (downloadInfo.status) {
+      case DOWNLOAD_STATUS.WAITING:
       case DOWNLOAD_STATUS.PAUSE:
       case DOWNLOAD_STATUS.ERROR:
         if (runingTask.size < appSetting['download.maxDownloadNum']) void startTask(downloadInfo)
@@ -388,6 +412,7 @@ export const startDownloadTasks = async(list: LX.Download.ListItem[]) => {
  * @param list
  */
 export const pauseDownloadTasks = async(list: LX.Download.ListItem[]) => {
+  if (isWebRuntime) return
   for (const downloadInfo of list) {
     switch (downloadInfo.status) {
       case DOWNLOAD_STATUS.RUN:
@@ -408,12 +433,12 @@ export const pauseDownloadTasks = async(list: LX.Download.ListItem[]) => {
  * @param ids 要移除的任务Id
  */
 export const removeDownloadTasks = async(ids: string[]) => {
-  await downloadTasksRemove(ids)
+  await removeStoredDownloadTasks(ids)
 
   const idsSet = new Set<string>(ids)
   const newList = downloadList.filter(task => {
     if (runingTask.has(task.id)) {
-      void window.lx.worker.download.removeTask(task.id)
+      if (!isWebRuntime) void window.lx.worker.download.removeTask(task.id)
       runingTask.delete(task.id)
     }
     return !idsSet.has(task.id)

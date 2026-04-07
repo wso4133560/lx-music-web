@@ -20,7 +20,7 @@
 import { ref } from '@common/utils/vueTools'
 import { sync } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
-import { sendSyncAction } from '@renderer/utils/ipc'
+import { requestSyncAction } from '@renderer/platform/sync'
 
 export default {
   setup() {
@@ -37,7 +37,7 @@ export default {
       if (code == '') return
       authCode.value = ''
       handleClose()
-      sendSyncAction({
+      requestSyncAction({
         action: 'enable_client',
         data: {
           enable: appSetting['sync.enable'],

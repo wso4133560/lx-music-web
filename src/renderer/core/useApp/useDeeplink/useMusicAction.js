@@ -6,11 +6,11 @@ import { playMusicInfo, isShowPlayerDetail } from '@renderer/store/player/state'
 import { setShowPlayerDetail, addTempPlayList } from '@renderer/store/player/action'
 
 import { dataVerify, qualityFilter, sources } from './utils'
-import { focusWindow } from '@renderer/utils/ipc'
 import { playNext } from '@renderer/core/player/action'
 import { toNewMusicInfo } from '@common/utils/tools'
 import { LIST_IDS } from '@common/constants'
 import { getOtherSource } from '@renderer/core/music/utils'
+import { focusRuntimeWindow as focusWindow } from '@renderer/platform/window'
 
 const useSearchMusic = () => {
   const router = useRouter()

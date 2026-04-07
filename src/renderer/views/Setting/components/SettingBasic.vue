@@ -6,9 +6,9 @@ dd
       base-checkbox(id="setting_show_animate" :model-value="appSetting['common.isShowAnimation']" :label="$t('setting__basic_show_animation')" @update:model-value="updateSetting({'common.isShowAnimation': $event})")
     .gap-top
       base-checkbox(id="setting_animate" :disabled="!appSetting['common.isShowAnimation']" :model-value="appSetting['common.randomAnimate']" :label="$t('setting__basic_animation')" @update:model-value="updateSetting({'common.randomAnimate': $event})")
-    .gap-top
+    .gap-top(v-if="supportsDesktopWindowControls")
       base-checkbox(id="setting_start_in_fullscreen" :model-value="appSetting['common.startInFullscreen']" :label="$t('setting__basic_start_in_fullscreen')" @update:model-value="updateSetting({'common.startInFullscreen': $event})")
-    .gap-top
+    .gap-top(v-if="supportsDesktopWindowControls")
       base-checkbox(id="setting_to_tray" :model-value="appSetting['tray.enable']" :label="$t('setting__basic_to_tray')" @update:model-value="updateSetting({'tray.enable': $event})")
     .p.gap-top
       base-btn.btn(min @click="isShowPlayTimeoutModal = true") {{ $t('setting__play_timeout')}} {{ timeLabel ? ` (${timeLabel})` : '' }}
@@ -17,7 +17,7 @@ dd
   h3#basic_theme {{ $t('setting__basic_theme') }}
   div
     ul(:class="$style.theme")
-      li(v-for="theme in themeList" :key="theme.id" :aria-label="theme.name" :style="theme.styles" :class="[$style.themeItem, {[$style.active]: themeId == theme.id}]" @click="toggleTheme(theme)" @contextmenu="handleEditTheme(theme)")
+      li(v-for="theme in themeList" :key="theme.id" :aria-label="theme.name" :style="theme.styles" :class="[$style.themeItem, {[$style.active]: themeId == theme.id}]" @click="toggleTheme(theme)" @contextmenu="supportsThemeEditing ? handleEditTheme(theme) : undefined")
         div(:class="$style.bg")
         span(:class="$style.label") {{ theme.name }}
       li(v-if="showAllTheme || themeId == 'auto'" :aria-label="$t('theme_auto_tip')" :style="autoTheme" :class="[$style.themeItem, $style.auto, {[$style.active]: themeId == 'auto'}]" @click="handleSetThemeAuto" @contextmenu="isShowThemeSelectorModal = true")
@@ -26,7 +26,7 @@ dd
             div(:class="$style.light")
             div(:class="$style.dark")
         span(:class="$style.label") {{ $t('theme_auto') }}
-      li(v-if="showAllTheme" :aria-label="$t('theme_add')" :class="[$style.themeItem, $style.add]" @click="handleEditTheme()")
+      li(v-if="showAllTheme && supportsThemeEditing" :aria-label="$t('theme_add')" :class="[$style.themeItem, $style.add]" @click="handleEditTheme()")
         div(:class="$style.bg")
           div(:class="$style.bgContent")
             svg-icon(:class="$style.icon" name="plus")
@@ -46,10 +46,10 @@ dd
           | {{ item.name }}
           span(v-if="item.desc" :class="$style.desc") {{ item.desc }}
           span(v-if="item.statusLabel" :class="$style.status") {{ item.statusLabel }}
-    .p.gap-top
+    .p.gap-top(v-if="supportsUserApiManagement")
       base-btn.btn(min @click="isShowUserApiModal = true") {{ $t('setting__basic_source_user_api_btn') }}
 
-dd
+dd(v-if="supportsDesktopWindowControls")
   h3#basic_window_size {{ $t('setting__basic_window_size') }}
   div
     base-checkbox.gap-left(
@@ -86,7 +86,7 @@ dd
     base-checkbox.gap-left(
       v-for="item in sourceNameTypes" :id="`setting_abasic_sourcename_${item.id}`" :key="item.id"
       name="setting_basic_sourcename" need :model-value="appSetting['common.sourceNameType']" :value="item.id" :label="item.label" @update:model-value="updateSetting({'common.sourceNameType': $event})")
-dd
+dd(v-if="supportsDesktopWindowControls")
   h3#basic_control_btn_position {{ $t('setting__basic_control_btn_position') }}
   div
     base-checkbox.gap-left(
@@ -106,26 +106,29 @@ dd
       need :model-value="appSetting['common.playBarProgressStyle']" value="full" :label="$t('setting__basic_playbar_progress_style_full')" @update:model-value="updateSetting({'common.playBarProgressStyle': $event})")
 
 ThemeSelectorModal(v-model="isShowThemeSelectorModal")
-ThemeEditModal(v-model="isShowThemeEditModal" :theme-id="editThemeId" @submit="handleRefreshTheme")
+ThemeEditModal(v-if="supportsThemeEditing" v-model="isShowThemeEditModal" :theme-id="editThemeId" @submit="handleRefreshTheme")
 play-timeout-modal(v-model="isShowPlayTimeoutModal")
-user-api-modal(v-model="isShowUserApiModal")
+user-api-modal(v-if="supportsUserApiManagement" v-model="isShowUserApiModal")
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import { computed, ref, watch, reactive, shallowReactive } from '@common/utils/vueTools'
 import { windowSizeList, userApi, isFullscreen, themeId } from '@renderer/store'
 import { langList, useI18n } from '@root/lang'
-import { getSystemFonts } from '@renderer/utils/ipc'
 import apiSourceInfo from '@renderer/utils/musicSdk/api-source-info'
 import { useTimeout } from '@renderer/core/player/timeoutStop'
 import { dialog } from '@renderer/plugins/Dialog'
+import { getAvailableSystemFonts } from '@renderer/platform/system'
+import { supportsDesktopWindowControls, supportsThemeEditing, supportsUserApiManagement } from '@renderer/platform/runtime'
 
 import ThemeSelectorModal from './ThemeSelectorModal.vue'
-import ThemeEditModal from './ThemeEditModal/index.vue'
 import PlayTimeoutModal from './PlayTimeoutModal.vue'
-import UserApiModal from './UserApiModal.vue'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { getThemes, applyTheme, findTheme, buildBgUrl } from '@renderer/store/utils'
+
+const ThemeEditModal = defineAsyncComponent(() => import('./ThemeEditModal/index.vue'))
+const UserApiModal = defineAsyncComponent(() => import('./UserApiModal.vue'))
 
 export default {
   name: 'SettingBasic',
@@ -206,6 +209,7 @@ export default {
     }
     const editThemeId = ref('')
     const handleEditTheme = (theme) => {
+      if (!supportsThemeEditing) return
       // console.log(theme)
       if (theme?.isDefault) return
       if (!theme && userThemes.length >= 10) {
@@ -298,7 +302,7 @@ export default {
     const fontList = computed(() => {
       return [{ id: '', label: t('setting__desktop_lyric_font_default') }, ...systemFontList.value]
     })
-    void getSystemFonts().then(fonts => {
+    void getAvailableSystemFonts().then(fonts => {
       systemFontList.value = fonts.map(f => ({ id: f, label: f.replace(/(^"|"$)/g, '') }))
     })
 
@@ -356,6 +360,9 @@ export default {
       editThemeId,
       handleEditTheme,
       fontSizeList,
+      supportsDesktopWindowControls,
+      supportsThemeEditing,
+      supportsUserApiManagement,
     }
   },
 }

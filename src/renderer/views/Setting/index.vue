@@ -25,7 +25,7 @@
     </div>
     <div ref="dom_content_ref" class="scroll" :class="$style.setting">
       <dl>
-        <component :is="avtiveComponentName" />
+        <component :is="activeComponent" />
         <!-- <SettingBasic />
         <SettingPlay />
         <SettingPlayDetail />
@@ -47,53 +47,57 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import { ref, computed, nextTick } from '@common/utils/vueTools'
 // import { currentStting } from './setting'
 import { useI18n } from '@renderer/plugins/i18n'
 import { useRoute } from '@common/utils/vueRouter'
+import { isSettingSectionEnabled } from '@renderer/platform/runtime'
 
 import SettingBasic from './components/SettingBasic.vue'
 import SettingPlay from './components/SettingPlay.vue'
 import SettingPlayDetail from './components/SettingPlayDetail.vue'
-import SettingDesktopLyric from './components/SettingDesktopLyric.vue'
 import SettingSearch from './components/SettingSearch.vue'
 import SettingList from './components/SettingList.vue'
 import SettingDownload from './components/SettingDownload.vue'
 import SettingSync from './components/SettingSync/index.vue'
-import SettingOpenAPI from './components/SettingOpenAPI.vue'
-import SettingHotKey from './components/SettingHotKey.vue'
 import SettingNetwork from './components/SettingNetwork.vue'
 import SettingOdc from './components/SettingOdc.vue'
-import SettingBackup from './components/SettingBackup.vue'
-import SettingOther from './components/SettingOther.vue'
-import SettingUpdate from './components/SettingUpdate.vue'
 import SettingAbout from './components/SettingAbout.vue'
+
+const SettingDesktopLyric = defineAsyncComponent(() => import('./components/SettingDesktopLyric.vue'))
+const SettingOpenAPI = defineAsyncComponent(() => import('./components/SettingOpenAPI.vue'))
+const SettingHotKey = defineAsyncComponent(() => import('./components/SettingHotKey.vue'))
+const SettingBackup = defineAsyncComponent(() => import('./components/SettingBackup.vue'))
+const SettingOther = defineAsyncComponent(() => import('./components/SettingOther.vue'))
+const SettingUpdate = defineAsyncComponent(() => import('./components/SettingUpdate.vue'))
 
 export default {
   name: 'Setting',
-  components: {
-    SettingBasic,
-    SettingPlay,
-    SettingPlayDetail,
-    SettingDesktopLyric,
-    SettingSearch,
-    SettingList,
-    SettingDownload,
-    SettingSync,
-    SettingOpenAPI,
-    SettingHotKey,
-    SettingNetwork,
-    SettingOdc,
-    SettingBackup,
-    SettingOther,
-    SettingUpdate,
-    SettingAbout,
-  },
   setup() {
     const t = useI18n()
     const route = useRoute()
 
     const dom_content_ref = ref(null)
+
+    const componentMap = {
+      SettingBasic,
+      SettingPlay,
+      SettingPlayDetail,
+      SettingSearch,
+      SettingList,
+      SettingDownload,
+      SettingSync,
+      SettingNetwork,
+      SettingOdc,
+      SettingAbout,
+      ...(isSettingSectionEnabled('SettingDesktopLyric') ? { SettingDesktopLyric } : {}),
+      ...(isSettingSectionEnabled('SettingOpenAPI') ? { SettingOpenAPI } : {}),
+      ...(isSettingSectionEnabled('SettingHotKey') ? { SettingHotKey } : {}),
+      ...(isSettingSectionEnabled('SettingBackup') ? { SettingBackup } : {}),
+      ...(isSettingSectionEnabled('SettingOther') ? { SettingOther } : {}),
+      ...(isSettingSectionEnabled('SettingUpdate') ? { SettingUpdate } : {}),
+    }
 
     const tocList = computed(() => {
       return [
@@ -113,12 +117,13 @@ export default {
         { id: 'SettingOther', title: t('setting__other') },
         { id: 'SettingUpdate', title: t('setting__update') },
         { id: 'SettingAbout', title: t('setting__about') },
-      ]
+      ].filter(item => isSettingSectionEnabled(item.id))
     })
 
     const avtiveComponentName = ref(route.query.name && tocList.value.some(t => t.id == route.query.name)
       ? route.query.name
       : tocList.value[0].id)
+    const activeComponent = computed(() => componentMap[avtiveComponentName.value] ?? SettingBasic)
 
     const toggleTab = id => {
       avtiveComponentName.value = id
@@ -133,6 +138,7 @@ export default {
     return {
       tocList,
       avtiveComponentName,
+      activeComponent,
       dom_content_ref,
       toggleTab,
     }
@@ -312,4 +318,3 @@ export default {
 // }
 
 </style>
-

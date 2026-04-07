@@ -27,6 +27,8 @@ import { initSetting } from './store/setting'
 import './worker'
 import { saveViewPrevState } from './utils/data'
 
+const isWebRuntime = !(window as any).require?.('electron')
+
 // sync(store, router)
 
 router.afterEach((to) => {
@@ -62,7 +64,7 @@ void getSetting().then(setting => {
   window.setLang(setting['common.langId'])
   window.i18n.setLanguage(setting['common.langId'])
 
-  if (!setting['common.startInFullscreen'] && (document.body.clientHeight > window.screen.availHeight || document.body.clientWidth > window.screen.availWidth) && setting['common.windowSizeId'] > 1) {
+  if (!isWebRuntime && !setting['common.startInFullscreen'] && (document.body.clientHeight > window.screen.availHeight || document.body.clientWidth > window.screen.availWidth) && setting['common.windowSizeId'] > 1) {
     void updateSetting({ 'common.windowSizeId': 1 })
   }
 

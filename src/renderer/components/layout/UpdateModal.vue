@@ -91,8 +91,8 @@ material-modal(:show="versionInfo.showModal" max-width="60%" @close="handleClose
 import { compareVer, sizeFormate } from '@common/utils'
 import { openUrl, clipboardWriteText } from '@common/utils/electron'
 import { dialog } from '@renderer/plugins/Dialog'
+import { checkRuntimeUpdate, downloadRuntimeUpdate, getRuntimeIgnoreVersion, quitRuntimeUpdate, saveRuntimeIgnoreVersion } from '@renderer/platform/update'
 import { versionInfo } from '@renderer/store'
-import { getIgnoreVersion, saveIgnoreVersion, quitUpdate, downloadUpdate, checkUpdate } from '@renderer/utils/ipc'
 
 export default {
   setup() {
@@ -129,7 +129,7 @@ export default {
     },
   },
   created() {
-    void getIgnoreVersion().then(version => {
+    void getRuntimeIgnoreVersion().then(version => {
       this.ignoreVersion = version
     })
     this.disabledIgnoreFailBtn = Date.now() - parseInt(localStorage.getItem('update__check_failed_tip') ?? '0') < 7 * 86400000
@@ -144,14 +144,14 @@ export default {
     handleRestartClick(event) {
       this.handleClose()
       event.target.disabled = true
-      quitUpdate()
+      quitRuntimeUpdate()
     },
     handleCopy(text) {
       clipboardWriteText(text)
     },
     async handleIgnoreClick() {
       if (this.isIgnored) {
-        saveIgnoreVersion(this.ignoreVersion = null)
+        saveRuntimeIgnoreVersion(this.ignoreVersion = null)
         return
       }
 
@@ -170,20 +170,20 @@ export default {
           return
         }
       }
-      saveIgnoreVersion(this.ignoreVersion = this.versionInfo.newVersion?.version)
+      saveRuntimeIgnoreVersion(this.ignoreVersion = this.versionInfo.newVersion?.version)
       // saveIgnoreVersion(this.versionInfo.newVersion?.version)
       // this.handleClose()
     },
     handleDownloadClick() {
-      if (this.isIgnored) saveIgnoreVersion(this.ignoreVersion = null)
+      if (this.isIgnored) saveRuntimeIgnoreVersion(this.ignoreVersion = null)
       versionInfo.status = 'downloading'
-      downloadUpdate()
+      downloadRuntimeUpdate()
     },
     handleCheckUpdate() {
-      if (this.isIgnored) saveIgnoreVersion(this.ignoreVersion = null)
+      if (this.isIgnored) saveRuntimeIgnoreVersion(this.ignoreVersion = null)
       versionInfo.status = 'checking'
       versionInfo.reCheck = true
-      checkUpdate()
+      checkRuntimeUpdate()
     },
     handleIgnoreFailTipClick() {
       localStorage.setItem('update__check_failed_tip', Date.now().toString())
@@ -316,4 +316,3 @@ export default {
 }
 
 </style>
-

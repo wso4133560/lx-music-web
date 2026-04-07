@@ -15,7 +15,7 @@ import {
   saveViewPrevState as saveViewPrevStateFromData,
 } from '@renderer/utils/ipc'
 import { throttle } from '@common/utils'
-import { type DEFAULT_SETTING, LIST_IDS } from '@common/constants'
+import { type DEFAULT_SETTING, DEFAULT_SETTING as defaultSetting, LIST_IDS } from '@common/constants'
 import { dateFormat } from './index'
 import { setUpdateTime } from '@renderer/store/list/action'
 
@@ -146,7 +146,7 @@ export const overwriteListUpdateInfo = async(ids: string[]) => {
 
 export const getSearchSetting = async() => {
   // eslint-disable-next-line require-atomic-updates
-  searchSetting ??= await getSearchSettingFromData()
+  searchSetting ??= await getSearchSettingFromData() ?? { ...defaultSetting.search }
   return { ...searchSetting }
 }
 export const setSearchSetting = async(setting: Partial<typeof DEFAULT_SETTING['search']>) => {
@@ -163,7 +163,7 @@ export const setSearchSetting = async(setting: Partial<typeof DEFAULT_SETTING['s
 
 export const getSongListSetting = async() => {
   // eslint-disable-next-line require-atomic-updates
-  songListSetting ??= await getSongListSettingFromData()
+  songListSetting ??= await getSongListSettingFromData() ?? { ...defaultSetting.songList }
   return { ...songListSetting }
 }
 export const setSongListSetting = async(setting: Partial<typeof DEFAULT_SETTING['songList']>) => {
@@ -174,7 +174,7 @@ export const setSongListSetting = async(setting: Partial<typeof DEFAULT_SETTING[
 
 export const getLeaderboardSetting = async() => {
   // eslint-disable-next-line require-atomic-updates
-  leaderboardSetting ??= await getLeaderboardSettingFromData()
+  leaderboardSetting ??= await getLeaderboardSettingFromData() ?? { ...defaultSetting.leaderboard }
   return { ...leaderboardSetting }
 }
 export const setLeaderboardSetting = async(setting: Partial<typeof DEFAULT_SETTING['leaderboard']>) => {

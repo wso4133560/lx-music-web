@@ -23,14 +23,13 @@ material-modal(:show="modelValue" bg-close teleport="#view" @close="handleClose"
         span.hover.underline(aria-label="https://lxmusic.toside.cn/desktop/custom-source" @click="handleOpenUrl('https://lyswhut.github.io/lx-music-doc/desktop/custom-source')") FAQ
       p {{ $t('user_api__note') }}
     div(:class="$style.footer")
-      base-btn(:class="$style.footerBtn" @click="isShowOnlineImportModal = true") {{ $t('user_api__btn_import_online') }}
-      base-btn(:class="$style.footerBtn" @click="handleImport") {{ $t('user_api__btn_import') }}
+      base-btn(v-if="supportsUserApiManagement" :class="$style.footerBtn" @click="isShowOnlineImportModal = true") {{ $t('user_api__btn_import_online') }}
+      base-btn(v-if="supportsUserApiManagement" :class="$style.footerBtn" @click="handleImport") {{ $t('user_api__btn_import') }}
       //- base-btn(:class="$style.footerBtn" @click="handleExport") {{ $t('user_api__btn_export') }}
     UserApiOnlineImportModal(v-model:show="isShowOnlineImportModal" @import="importUserApi")
 </template>
 
 <script>
-import { importUserApi, removeUserApi, showSelectDialog, setAllowShowUserApiUpdateAlert } from '@renderer/utils/ipc'
 import { readFile } from '@common/utils/nodejs'
 import { openUrl } from '@common/utils/electron'
 import apiSourceInfo from '@renderer/utils/musicSdk/api-source-info'
@@ -38,6 +37,9 @@ import { userApi } from '@renderer/store'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 import { computed, ref } from '@common/utils/vueTools'
 import { dialog } from '@renderer/plugins/Dialog'
+import { supportsUserApiManagement } from '@renderer/platform/runtime'
+import { selectFiles } from '@renderer/platform/system'
+import { importRuntimeUserApi, removeRuntimeUserApi, setRuntimeUserApiUpdateAlert } from '@renderer/platform/userApi'
 
 import UserApiOnlineImportModal from './UserApiOnlineImportModal.vue'
 
@@ -61,17 +63,20 @@ export default {
       apiList,
       appSetting,
       isShowOnlineImportModal,
+      supportsUserApiManagement,
     }
   },
   methods: {
     async importUserApi(script) {
-      return importUserApi(script).then(({ apiList }) => {
+      if (!supportsUserApiManagement) return
+      return importRuntimeUserApi(script).then(({ apiList }) => {
         userApi.list = apiList
       }).catch((err) => {
         void dialog(this.$t('user_api_import__failed', { message: err.message }))
       })
     },
     handleImport() {
+      if (!supportsUserApiManagement) return
       if (this.userApi.list.length > 20) {
         this.$dialog({
           message: this.$t('user_api__max_tip'),
@@ -79,7 +84,7 @@ export default {
         })
         return
       }
-      void showSelectDialog({
+      void selectFiles({
         title: this.$t('user_api__import_file'),
         properties: ['openFile'],
         filters: [
@@ -104,7 +109,7 @@ export default {
         if (!backApi) backApi = userApi.list[0]
         updateSetting({ 'common.apiSource': backApi?.id ?? '' })
       }
-      userApi.list = await removeUserApi([api.id])
+      userApi.list = await removeRuntimeUserApi([api.id])
     },
     handleClose() {
       this.$emit('update:modelValue', false)
@@ -113,7 +118,7 @@ export default {
       void openUrl(url)
     },
     handleChangeAllowUpdateAlert(api, enable) {
-      void setAllowShowUserApiUpdateAlert(api.id, enable)
+      void setRuntimeUserApiUpdateAlert(api.id, enable)
     },
   },
 }

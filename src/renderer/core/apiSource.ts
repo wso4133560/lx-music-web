@@ -1,8 +1,8 @@
 import { apiSource, qualityList, userApi } from '@renderer/store'
 import { appSetting, setApiSource } from '@renderer/store/setting'
-import { setUserApi as setUserApiAction } from '@renderer/utils/ipc'
 import musicSdk from '@renderer/utils/musicSdk'
 import apiSourceInfo from '@renderer/utils/musicSdk/api-source-info'
+import { setRuntimeUserApiSource } from '@renderer/platform/userApi'
 
 let prevId = ''
 export const setUserApi = async(apiId: string) => {
@@ -23,7 +23,7 @@ export const setUserApi = async(apiId: string) => {
     userApi.status = false
     userApi.message = 'initing'
 
-    await setUserApiAction(apiId).then(() => {
+    await setRuntimeUserApiSource(apiId).then(() => {
       if (prevId != apiId) return
       apiSource.value = apiId
     }).catch(err => {
@@ -39,7 +39,7 @@ export const setUserApi = async(apiId: string) => {
     // @ts-expect-error
     qualityList.value = musicSdk.supportQuality[apiId] ?? {}
     apiSource.value = apiId
-    void setUserApiAction(apiId)
+    void setRuntimeUserApiSource(apiId)
     if (!window.lx.apiInitPromise[1]) window.lx.apiInitPromise[2](true)
   }
 

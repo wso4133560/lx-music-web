@@ -36,8 +36,8 @@ import { computed } from '@common/utils/vueTools'
 import { versionInfo } from '@renderer/store'
 import { dateFormat, sizeFormate } from '@common/utils/common'
 // import { openDirInExplorer, selectDir } from '@renderer/utils'
-import { openDevTools } from '@renderer/utils/ipc'
 import { useI18n } from '@renderer/plugins/i18n'
+import { openRuntimeDevTools } from '@renderer/platform/window'
 import { appSetting, updateSetting } from '@renderer/store/setting'
 
 export default {
@@ -55,7 +55,7 @@ export default {
         if (clickNum > 0) clickNum = 0
       } else {
         if (clickNum > 4) {
-          openDevTools()
+          openRuntimeDevTools()
           clickNum = 0
           return
         }

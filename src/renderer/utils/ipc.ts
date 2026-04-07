@@ -1,16 +1,49 @@
 import { rendererSend, rendererInvoke, rendererOn, rendererOff } from '@common/rendererIpc'
 import { HOTKEY_RENDERER_EVENT_NAME, WIN_MAIN_RENDERER_EVENT_NAME, CMMON_EVENT_NAME } from '@common/ipcNames'
-import { type ProgressInfo, type UpdateDownloadedEvent, type UpdateInfo } from 'electron-updater'
 import { markRaw } from '@common/utils/vueTools'
 import * as hotKeys from '@common/hotKey'
-import { APP_EVENT_NAMES, DATA_KEYS, DEFAULT_SETTING } from '@common/constants'
+import { APP_EVENT_NAMES, DATA_KEYS, DEFAULT_SETTING, LIST_IDS } from '@common/constants'
+import defaultSetting from '@common/defaultSetting'
+import { isWebRuntime } from '@renderer/platform/runtime'
+import { readWebStorage, writeWebStorage } from '@renderer/platform/webStorage'
+
+type ProgressInfo = any
+type UpdateDownloadedEvent = any
+type UpdateInfo = any
 
 type RemoveListener = () => void
 
+const defaultHotKeyConfig = (): LX.HotKeyConfigAll => ({
+  local: {
+    enable: false,
+    keys: {},
+  },
+  global: {
+    enable: false,
+    keys: {},
+  },
+})
+
+const readWebData = <T>(key: string, fallback: T): T => {
+  return readWebStorage(key, fallback)
+}
+
+const writeWebData = (key: string, value: unknown) => {
+  writeWebStorage(key, value)
+}
+
 export const getSetting = async() => {
-  return rendererInvoke<LX.AppSetting>(CMMON_EVENT_NAME.get_app_setting)
+  if (isWebRuntime) return readWebStorage('app_setting', { ...defaultSetting })
+  return (await rendererInvoke<LX.AppSetting>(CMMON_EVENT_NAME.get_app_setting)) ?? { ...defaultSetting }
 }
 export const updateSetting = async(setting: Partial<LX.AppSetting>) => {
+  if (isWebRuntime) {
+    writeWebStorage('app_setting', {
+      ...readWebStorage('app_setting', { ...defaultSetting }),
+      ...setting,
+    })
+    return
+  }
   await rendererInvoke(CMMON_EVENT_NAME.set_app_setting, setting)
 }
 export const onSettingChanged = (listener: LX.IpcRendererEventListenerParams<Partial<LX.AppSetting>>): RemoveListener => {
@@ -51,6 +84,7 @@ export const getOtherSourceCount = async() => {
 // }
 
 export const getHotKeyConfig = async() => {
+  if (isWebRuntime) return defaultHotKeyConfig()
   return rendererInvoke<LX.HotKeyConfigAll>(WIN_MAIN_RENDERER_EVENT_NAME.get_hot_key)
 }
 
@@ -59,6 +93,12 @@ export const setIgnoreMouseEvents = (ignore: boolean) => {
 }
 
 export const getEnvParams = async() => {
+  if (isWebRuntime) {
+    return {
+      cmdParams: {},
+      deeplink: null,
+    } as LX.EnvParams
+  }
   return rendererInvoke<LX.EnvParams>(CMMON_EVENT_NAME.get_env_params)
 }
 
@@ -125,6 +165,7 @@ export const importUserApi = async(fileText: string) => {
   return rendererInvoke<string, LX.UserApi.ImportUserApi>(WIN_MAIN_RENDERER_EVENT_NAME.import_user_api, fileText)
 }
 export const setUserApi = async(source: LX.UserApi.UserApiSetApiParams): Promise<void> => {
+  if (isWebRuntime) return
   return rendererInvoke<LX.UserApi.UserApiSetApiParams>(WIN_MAIN_RENDERER_EVENT_NAME.set_user_api, source)
 }
 export const removeUserApi = async(ids: string[]) => {
@@ -146,6 +187,7 @@ export const onUserApiStatus = (listener: LX.IpcRendererEventListenerParams<LX.U
   }
 }
 export const getUserApiList = async() => {
+  if (isWebRuntime) return []
   return rendererInvoke<LX.UserApi.UserApiInfo[]>(WIN_MAIN_RENDERER_EVENT_NAME.get_user_api_list)
 }
 export const sendUserApiRequest = async({ requestKey, data }: LX.UserApi.UserApiRequestParams): Promise<any> => {
@@ -182,6 +224,10 @@ export const sendOpenAPIAction = async(action: LX.OpenAPI.Actions) => {
 }
 
 export const saveLastStartInfo = (version: string) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.lastStartInfo, version)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.lastStartInfo,
     data: version,
@@ -189,10 +235,15 @@ export const saveLastStartInfo = (version: string) => {
 }
 // 获取最后一次启动时的版本号
 export const getLastStartInfo = async() => {
+  if (isWebRuntime) return readWebData<string | null>(DATA_KEYS.lastStartInfo, null)
   return rendererInvoke<string, string | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.lastStartInfo)
 }
 
 export const savePlayInfo = (playInfo: LX.Player.SavedPlayInfo) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.playInfo, playInfo)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.playInfo,
     data: playInfo,
@@ -200,10 +251,15 @@ export const savePlayInfo = (playInfo: LX.Player.SavedPlayInfo) => {
 }
 // 获取上次关闭时的当前歌曲播放信息
 export const getPlayInfo = async() => {
+  if (isWebRuntime) return readWebData<LX.Player.SavedPlayInfo | null>(DATA_KEYS.playInfo, null)
   return rendererInvoke<string, LX.Player.SavedPlayInfo | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.playInfo)
 }
 
 export const saveSearchHistoryList = (list: LX.List.SearchHistoryList) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.searchHistoryList, list)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.searchHistoryList,
     data: list,
@@ -211,10 +267,15 @@ export const saveSearchHistoryList = (list: LX.List.SearchHistoryList) => {
 }
 // 获取搜索历史列表
 export const getSearchHistoryList = async() => {
+  if (isWebRuntime) return readWebData<string[] | null>(DATA_KEYS.searchHistoryList, [])
   return rendererInvoke<string, string[] | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.searchHistoryList)
 }
 
 export const saveListPositionInfo = (listPosition: LX.List.ListPositionInfo) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.listScrollPosition, listPosition)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.listScrollPosition,
     data: listPosition,
@@ -222,10 +283,15 @@ export const saveListPositionInfo = (listPosition: LX.List.ListPositionInfo) => 
 }
 // 获取搜索历史列表
 export const getListPositionInfo = async() => {
-  return rendererInvoke<string, LX.List.ListPositionInfo | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.listScrollPosition)
+  if (isWebRuntime) return readWebData<LX.List.ListPositionInfo>(DATA_KEYS.listScrollPosition, {})
+  return (await rendererInvoke<string, LX.List.ListPositionInfo | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.listScrollPosition)) ?? {}
 }
 
 export const saveListPrevSelectId = (listPosition: string | null) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.listPrevSelectId, listPosition)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.listPrevSelectId,
     data: listPosition,
@@ -233,10 +299,15 @@ export const saveListPrevSelectId = (listPosition: string | null) => {
 }
 // 获取上一次选中的列表id
 export const getListPrevSelectId = async() => {
-  return rendererInvoke<string, string | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.listPrevSelectId)
+  if (isWebRuntime) return readWebData<string>(DATA_KEYS.listPrevSelectId, LIST_IDS.DEFAULT)
+  return (await rendererInvoke<string, string | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.listPrevSelectId)) ?? LIST_IDS.DEFAULT
 }
 
 export const saveListUpdateInfo = (listPosition: LX.List.ListUpdateInfo) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.listUpdateInfo, listPosition)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.listUpdateInfo,
     data: listPosition,
@@ -244,10 +315,15 @@ export const saveListUpdateInfo = (listPosition: LX.List.ListUpdateInfo) => {
 }
 // 获取列表更新记录
 export const getListUpdateInfo = async() => {
-  return rendererInvoke<string, LX.List.ListUpdateInfo | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.listUpdateInfo)
+  if (isWebRuntime) return readWebData<LX.List.ListUpdateInfo>(DATA_KEYS.listUpdateInfo, {})
+  return (await rendererInvoke<string, LX.List.ListUpdateInfo | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.listUpdateInfo)) ?? {}
 }
 
 export const saveIgnoreVersion = (version: string) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.ignoreVersion, version)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.ignoreVersion,
     data: version,
@@ -255,43 +331,64 @@ export const saveIgnoreVersion = (version: string) => {
 }
 // 获取忽略更新的版本号
 export const getIgnoreVersion = async() => {
+  if (isWebRuntime) return readWebData<string | null>(DATA_KEYS.ignoreVersion, null)
   return rendererInvoke<string, string | null>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.ignoreVersion)
 }
 
 export const saveLeaderboardSetting = (source: typeof DEFAULT_SETTING['leaderboard']) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.leaderboardSetting, source)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.leaderboardSetting,
     data: source,
   })
 }
 export const getLeaderboardSetting = async() => {
+  if (isWebRuntime) return readWebData(DATA_KEYS.leaderboardSetting, { ...DEFAULT_SETTING.leaderboard })
   return (await rendererInvoke<string, typeof DEFAULT_SETTING['leaderboard']>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.leaderboardSetting)) ?? { ...DEFAULT_SETTING.leaderboard }
 }
 export const saveSongListSetting = (setting: typeof DEFAULT_SETTING['songList']) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.songListSetting, setting)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.songListSetting,
     data: setting,
   })
 }
 export const getSongListSetting = async() => {
+  if (isWebRuntime) return readWebData(DATA_KEYS.songListSetting, { ...DEFAULT_SETTING.songList })
   return (await rendererInvoke<string, typeof DEFAULT_SETTING['songList']>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.songListSetting)) ?? { ...DEFAULT_SETTING.songList }
 }
 export const saveSearchSetting = (setting: typeof DEFAULT_SETTING['search']) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.searchSetting, setting)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.searchSetting,
     data: setting,
   })
 }
 export const getSearchSetting = async() => {
+  if (isWebRuntime) return readWebData(DATA_KEYS.searchSetting, { ...DEFAULT_SETTING.search })
   return (await rendererInvoke<string, typeof DEFAULT_SETTING['search']>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.searchSetting)) ?? { ...DEFAULT_SETTING.search }
 }
 export const saveViewPrevState = (state: typeof DEFAULT_SETTING['viewPrevState']) => {
+  if (isWebRuntime) {
+    writeWebData(DATA_KEYS.viewPrevState, state)
+    return
+  }
   rendererSend(WIN_MAIN_RENDERER_EVENT_NAME.save_data, {
     path: DATA_KEYS.viewPrevState,
     data: state,
   })
 }
 export const getViewPrevState = async() => {
+  if (isWebRuntime) return readWebData(DATA_KEYS.viewPrevState, { ...DEFAULT_SETTING.viewPrevState })
   return (await rendererInvoke<string, typeof DEFAULT_SETTING['viewPrevState']>(WIN_MAIN_RENDERER_EVENT_NAME.get_data, DATA_KEYS.viewPrevState)) ?? { ...DEFAULT_SETTING.viewPrevState }
 }
 
@@ -509,6 +606,7 @@ export const onThemeChange = (listener: LX.IpcRendererEventListenerParams<LX.The
  * 选择路径
  */
 export const showSelectDialog = async(options: Electron.OpenDialogOptions) => {
+  if (isWebRuntime) return { canceled: true, filePaths: [] } as Electron.OpenDialogReturnValue
   return rendererInvoke<Electron.OpenDialogOptions, Electron.OpenDialogReturnValue>(WIN_MAIN_RENDERER_EVENT_NAME.show_select_dialog, options)
 }
 
@@ -516,6 +614,7 @@ export const showSelectDialog = async(options: Electron.OpenDialogOptions) => {
  * 打开保存对话框
  */
 export const openSaveDir = async(options: Electron.SaveDialogOptions) => {
+  if (isWebRuntime) return { canceled: true, filePath: undefined } as Electron.SaveDialogReturnValue
   return rendererInvoke<Electron.SaveDialogOptions, Electron.SaveDialogReturnValue>(WIN_MAIN_RENDERER_EVENT_NAME.show_save_dialog, options)
 }
 
@@ -546,6 +645,7 @@ export const clearCache = async() => {
  * @param {*} height
  */
 export const setWindowSize = (width: number, height: number) => {
+  if (isWebRuntime) return
   const params: Partial<Electron.Rectangle> = {
     width,
     height,
@@ -761,6 +861,7 @@ export const onUpdateHotkey = (listener: LX.IpcRendererEventListenerParams<LX.Ho
  * @returns
  */
 export const setFullScreen = async(isFullscreen: boolean): Promise<boolean> => {
+  if (isWebRuntime) return isFullscreen
   return rendererInvoke<boolean, boolean>(WIN_MAIN_RENDERER_EVENT_NAME.fullscreen, isFullscreen)
 }
 
@@ -798,6 +899,7 @@ export const sendSyncAction = async(action: LX.Sync.SyncServiceActions) => {
  * @returns
  */
 export const getSyncServerDevices = () => {
+  if (isWebRuntime) return Promise.resolve([])
   return rendererInvoke<LX.Sync.ServerDevices>(WIN_MAIN_RENDERER_EVENT_NAME.sync_get_server_devices)
 }
 
@@ -806,6 +908,7 @@ export const getSyncServerDevices = () => {
  * @returns
  */
 export const removeSyncServerDevice = (clientId: string) => {
+  if (isWebRuntime) return Promise.resolve()
   return rendererInvoke<string>(WIN_MAIN_RENDERER_EVENT_NAME.sync_remove_server_device, clientId)
 }
 
@@ -836,7 +939,7 @@ export const onNewDesktopLyricProcess = (listener: LX.IpcRendererEventListener):
 
 
 export const downloadTasksGet = async() => {
-  return rendererInvoke<LX.Download.ListItem[]>(WIN_MAIN_RENDERER_EVENT_NAME.download_list_get)
+  return (await rendererInvoke<LX.Download.ListItem[]>(WIN_MAIN_RENDERER_EVENT_NAME.download_list_get)) ?? []
 }
 export const downloadTasksCreate = async(list: LX.Download.ListItem[], addMusicLocationType: LX.AddMusicLocationType) => {
   return rendererInvoke<LX.Download.saveDownloadMusicInfo>(WIN_MAIN_RENDERER_EVENT_NAME.download_list_add, {

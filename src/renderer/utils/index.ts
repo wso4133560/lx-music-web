@@ -1,4 +1,5 @@
 import { dateFormat } from '@common/utils/common'
+import { convertLangS2t } from '@renderer/platform/desktopFiles'
 
 export * from '@common/utils/renderer'
 export * from '@common/utils/nodejs'
@@ -73,7 +74,7 @@ export const deduplicationList = <T extends LX.Music.MusicInfo>(list: T[]): T[] 
 }
 
 export const langS2T = async(str: string) => {
-  return window.lx.worker.main.langS2t(Buffer.from(str).toString('base64')).then(b64 => Buffer.from(b64, 'base64').toString())
+  return convertLangS2t(str)
 }
 
 export const decodeName = (str: string | null = '') => {

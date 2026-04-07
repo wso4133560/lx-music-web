@@ -8,6 +8,7 @@ import { checkPath } from '@common/utils/nodejs'
 import { toOldMusicInfo } from '@renderer/utils/index'
 import { startDownloadTasks, pauseDownloadTasks, removeDownloadTasks } from '@renderer/store/download/action'
 import { openDirInExplorer } from '@renderer/utils/ipc'
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 export default ({ list, selectedList, removeAllSelect }) => {
   const router = useRouter()
@@ -68,6 +69,10 @@ export default ({ list, selectedList, removeAllSelect }) => {
 
   const handleOpenFile = async(index) => {
     const task = list.value[index]
+    if (isWebRuntime) {
+      if (task.metadata.url) openUrl(task.metadata.url)
+      return
+    }
     if (!checkPath(task.metadata.filePath)) return
     openDirInExplorer(task.metadata.filePath)
   }

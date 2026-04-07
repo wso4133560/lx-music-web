@@ -19,11 +19,14 @@ import {
 } from './action'
 import { allMusicList } from './state'
 
+const isWebRuntime = !(window as any).require?.('electron')
+
 /**
  * 获取用户列表
  * @returns 所有用户列表
  */
 export const getUserLists = async() => {
+  if (isWebRuntime) return setUserLists([])
   const lists = await rendererInvoke<LX.List.UserListInfo[]>(PLAYER_EVENT_NAME.list_get)
   return setUserLists(lists)
 }
@@ -33,6 +36,7 @@ export const getUserLists = async() => {
  * @param data
  */
 export const createUserList = async(data: LX.List.ListActionAdd) => {
+  if (isWebRuntime) return
   data.listInfos = data.listInfos.map(info => toRaw(info))
   await rendererInvoke<LX.List.ListActionAdd>(PLAYER_EVENT_NAME.list_add, data)
 }
@@ -42,6 +46,7 @@ export const createUserList = async(data: LX.List.ListActionAdd) => {
  * @param data
  */
 export const removeUserList = async(data: LX.List.ListActionRemove) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionRemove>(PLAYER_EVENT_NAME.list_remove, data)
 }
 
@@ -50,6 +55,7 @@ export const removeUserList = async(data: LX.List.ListActionRemove) => {
  * @param data
  */
 export const updateUserList = async(data: LX.List.ListActionUpdate) => {
+  if (isWebRuntime) return
   data = data.map(info => toRaw(info))
   await rendererInvoke<LX.List.ListActionUpdate>(PLAYER_EVENT_NAME.list_update, data)
 }
@@ -59,6 +65,7 @@ export const updateUserList = async(data: LX.List.ListActionUpdate) => {
  * @param data
  */
 export const updateUserListPosition = async(data: LX.List.ListActionUpdatePosition) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionUpdatePosition>(PLAYER_EVENT_NAME.list_update_position, data)
 }
 
@@ -69,6 +76,7 @@ export const updateUserListPosition = async(data: LX.List.ListActionUpdatePositi
 export const getListMusics = async(listId: string | null): Promise<LX.Music.MusicInfo[]> => {
   if (!listId) return []
   if (allMusicList.has(listId)) return allMusicList.get(listId)!
+  if (isWebRuntime) return setMusicList(listId, [])
   const list = await rendererInvoke<string, LX.Music.MusicInfo[]>(PLAYER_EVENT_NAME.list_music_get, listId)
   return setMusicList(listId, list)
 }
@@ -78,6 +86,7 @@ export const getListMusics = async(listId: string | null): Promise<LX.Music.Musi
  * @param data
  */
 export const addListMusics = async(data: LX.List.ListActionMusicAdd) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionMusicAdd>(PLAYER_EVENT_NAME.list_music_add, data)
 }
 
@@ -86,6 +95,7 @@ export const addListMusics = async(data: LX.List.ListActionMusicAdd) => {
  * @param data
  */
 export const moveListMusics = async(data: LX.List.ListActionMusicMove) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionMusicMove>(PLAYER_EVENT_NAME.list_music_move, data)
 }
 
@@ -94,6 +104,7 @@ export const moveListMusics = async(data: LX.List.ListActionMusicMove) => {
  * @param data
  */
 export const removeListMusics = async(data: LX.List.ListActionMusicRemove) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionMusicRemove>(PLAYER_EVENT_NAME.list_music_remove, data)
 }
 
@@ -102,14 +113,16 @@ export const removeListMusics = async(data: LX.List.ListActionMusicRemove) => {
  * @param data
  */
 export const updateListMusics = async(data: LX.List.ListActionMusicUpdate) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionMusicUpdate>(PLAYER_EVENT_NAME.list_music_update, data)
 }
 
 /**
- * 批量移动列表内歌曲的位置
+ * 批量移动列表���歌曲的位置
  * @param data
  */
 export const updateListMusicsPosition = async(data: LX.List.ListActionMusicUpdatePosition) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionMusicUpdatePosition>(PLAYER_EVENT_NAME.list_music_update_position, data)
 }
 
@@ -118,6 +131,7 @@ export const updateListMusicsPosition = async(data: LX.List.ListActionMusicUpdat
  * @param data
  */
 export const overwriteListMusics = async(data: LX.List.ListActionMusicOverwrite) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionMusicOverwrite>(PLAYER_EVENT_NAME.list_music_overwrite, data)
 }
 
@@ -126,6 +140,7 @@ export const overwriteListMusics = async(data: LX.List.ListActionMusicOverwrite)
  * @param ids
  */
 export const clearListMusics = async(ids: LX.List.ListActionMusicClear) => {
+  if (isWebRuntime) return
   await rendererInvoke<LX.List.ListActionMusicClear>(PLAYER_EVENT_NAME.list_music_clear, ids)
 }
 
@@ -134,6 +149,7 @@ export const clearListMusics = async(ids: LX.List.ListActionMusicClear) => {
  * @param data
  */
 export const overwriteListFull = async(data: LX.List.ListActionDataOverwrite) => {
+  if (isWebRuntime) return
   data.defaultList = toRaw(data.defaultList)
   data.loveList = toRaw(data.loveList)
   if (data.tempList) {
@@ -155,6 +171,7 @@ export const overwriteListFull = async(data: LX.List.ListActionDataOverwrite) =>
  * @param musicInfoId
  */
 export const checkListExistMusic = async(listId: string, musicInfoId: string): Promise<boolean> => {
+  if (isWebRuntime) return false
   return rendererInvoke<LX.List.ListActionCheckMusicExistList, boolean>(PLAYER_EVENT_NAME.list_music_check_exist, { listId, musicInfoId })
 }
 
@@ -163,6 +180,7 @@ export const checkListExistMusic = async(listId: string, musicInfoId: string): P
  * @param musicInfoId
  */
 export const getMusicExistListIds = async(musicInfoId: string): Promise<string[]> => {
+  if (isWebRuntime) return []
   return rendererInvoke<string, string[]>(PLAYER_EVENT_NAME.list_music_get_list_ids, musicInfoId)
 }
 
@@ -171,6 +189,8 @@ const noop = () => {}
 
 
 export const registerListAction = (appSetting: LX.AppSetting, onListChanged: (listIds: string[]) => void = noop) => {
+  if (isWebRuntime) return noop
+
   const list_data_overwrite = ({ params: datas }: LX.IpcRendererEventParams<LX.List.ListActionDataOverwrite>) => {
     const updatedListIds = listDataOverwrite(datas)
     if (updatedListIds.length) onListChanged(updatedListIds)
@@ -201,7 +221,6 @@ export const registerListAction = (appSetting: LX.AppSetting, onListChanged: (li
     if (updatedListIds.length) onListChanged(updatedListIds)
   }
   const list_music_remove = ({ params: { listId, ids } }: LX.IpcRendererEventParams<LX.List.ListActionMusicRemove>) => {
-    // console.log(listId, ids)
     const updatedListIds = listMusicRemove(listId, ids)
     if (updatedListIds.length) onListChanged(updatedListIds)
   }

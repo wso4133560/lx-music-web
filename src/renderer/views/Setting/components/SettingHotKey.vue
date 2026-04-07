@@ -29,9 +29,9 @@ dd
 
 <script>
 import { ref, onBeforeUnmount, toRaw, shallowReactive } from '@common/utils/vueTools'
-import { allHotKeys, hotKeySetEnable, hotKeySetConfig, hotKeyGetStatus } from '@renderer/utils/ipc'
 import { isMac } from '@common/utils'
 import { useI18n } from '@renderer/plugins/i18n'
+import { getRuntimeHotKeyStatus, runtimeHotKeys, setRuntimeHotKeyConfig, setRuntimeHotKeyEnable } from '@renderer/platform/hotkey'
 
 
 const formatHotKeyName = (name) => {
@@ -94,7 +94,7 @@ export default {
 
     const handleHotKeyFocus = (event, info, type) => {
       setTimeout(async() => {
-        await hotKeySetEnable(false)
+        await setRuntimeHotKeyEnable(false)
         window.lx.isEditingHotKey = true
         isEditHotKey = true
         let config = hotKeyConfig.value[type][info.name]
@@ -106,7 +106,7 @@ export default {
 
     const handleHotKeyBlur = (event, info, type) => {
       setTimeout(async() => {
-        await hotKeySetEnable(true)
+        await setRuntimeHotKeyEnable(true)
         window.lx.isEditingHotKey = false
         isEditHotKey = false
         const prevInput = hotKeyTargetInput
@@ -119,7 +119,7 @@ export default {
         let originKey
         if (type == 'global' && newHotKey && current_hot_key.value.global.enable) {
           try {
-            await hotKeySetConfig({
+            await setRuntimeHotKeyConfig({
               action: 'register',
               data: {
                 key: newHotKey,
@@ -156,7 +156,7 @@ export default {
         // console.log(this.current_hot_key.global.keys)
         if (originKey && current_hot_key.value.global.enable) {
           try {
-            await hotKeySetConfig({
+            await setRuntimeHotKeyConfig({
               action: 'unregister',
               data: originKey,
             })
@@ -192,13 +192,13 @@ export default {
     // }
     const handleHotKeySaveConfig = async() => {
       // console.log(this.current_hot_key)
-      await hotKeySetConfig({
+      await setRuntimeHotKeyConfig({
         action: 'config',
         data: toRaw(current_hot_key.value),
       })
     }
     const handleEnableHotKey = async() => {
-      await hotKeySetConfig({
+      await setRuntimeHotKeyConfig({
         action: 'enable',
         data: current_hot_key.value.global.enable,
       })
@@ -206,7 +206,7 @@ export default {
       await getHotKeyStatus()
     }
     const getHotKeyStatus = async() => {
-      return hotKeyGetStatus().then(status => {
+      return getRuntimeHotKeyStatus().then(status => {
         // console.log(status)
         hotKeyStatus.value = status
         return status
@@ -225,7 +225,7 @@ export default {
 
     return {
       // appSetting,
-      allHotKeys,
+      allHotKeys: runtimeHotKeys,
       current_hot_key,
       hotKeyConfig,
       hotKeyStatus,

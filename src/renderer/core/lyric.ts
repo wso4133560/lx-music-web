@@ -5,7 +5,7 @@ import { isPlay, musicInfo } from '@renderer/store/player/state'
 import { setStatusText } from '@renderer/store/player/action'
 import { markRawList } from '@common/utils/vueTools'
 import { appSetting } from '@renderer/store/setting'
-import { onNewDesktopLyricProcess } from '@renderer/utils/ipc'
+import { subscribeDesktopLyricProcess } from '@renderer/platform/desktopLyric'
 
 const getCurrentTime = () => {
   return getPlayerCurrentTime() * 1000
@@ -105,7 +105,7 @@ export const init = () => {
     // offset: 80,
   })
 
-  onNewDesktopLyricProcess(({ event }) => {
+  subscribeDesktopLyricProcess(({ event }) => {
     console.log('onNewDesktopLyricProcess')
     const [port] = event.ports
     desktopLyricPort = port

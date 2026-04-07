@@ -1,5 +1,5 @@
 import { onBeforeUnmount, watch } from '@common/utils/vueTools'
-import { sendPlayerStatus, onPlayerAction } from '@renderer/utils/ipc'
+import { publishPlayerStatus, subscribePlayerActions } from '@renderer/platform/player'
 // import store from '@renderer/store'
 
 import { loveList } from '@renderer/store/list/state'
@@ -24,21 +24,21 @@ export default () => {
   }
 
   const handlePlay = () => {
-    sendPlayerStatus({ status: 'playing' })
+    publishPlayerStatus({ status: 'playing' })
   }
   const handlePause = () => {
-    sendPlayerStatus({ status: 'paused' })
+    publishPlayerStatus({ status: 'paused' })
   }
   const handleStop = () => {
     if (playMusicInfo.musicInfo != null) return
-    sendPlayerStatus({ status: 'stoped' })
+    publishPlayerStatus({ status: 'stoped' })
   }
   const handleError = () => {
-    sendPlayerStatus({ status: 'error' })
+    publishPlayerStatus({ status: 'error' })
   }
   const handleSetPlayInfo = async() => {
     await updateCollectStatus()
-    sendPlayerStatus({
+    publishPlayerStatus({
       collect,
       name: musicInfo.name,
       singer: musicInfo.singer,
@@ -50,7 +50,7 @@ export default () => {
     })
   }
   const handleSetLyric = () => {
-    sendPlayerStatus({
+    publishPlayerStatus({
       lyric: musicInfo.lrc ?? '',
       tlyric: musicInfo.tlrc ?? '',
       rlyric: musicInfo.rlrc ?? '',
@@ -60,13 +60,13 @@ export default () => {
     })
   }
   const handleSetPic = () => {
-    sendPlayerStatus({
+    publishPlayerStatus({
       picUrl: musicInfo.pic ?? '',
     })
   }
   const handleSetLyricLine = (text: string, line: number) => {
     let curLine = lyric.lines[line]?.extendedLyrics.join('\n') ?? ''
-    sendPlayerStatus({
+    publishPlayerStatus({
       lyricLineText: text,
       lyricLineAllText: curLine ? text + '\n' + curLine : text,
     })
@@ -76,7 +76,7 @@ export default () => {
   // }
   const throttleListChange = throttle(async listIds => {
     if (!listIds.includes(loveList.id)) return
-    if (await updateCollectStatus()) sendPlayerStatus({ collect })
+    if (await updateCollectStatus()) publishPlayerStatus({ collect })
   })
   // const updateSetting = () => {
   //   const setting = store.getters.setting
@@ -84,7 +84,7 @@ export default () => {
   //   buttons.lockLrc = setting.desktopLyric.isLock
   //   setButtons()
   // }
-  const rTaskbarThumbarClick = onPlayerAction(async({ params: { action, data } }) => {
+  const rTaskbarThumbarClick = subscribePlayerActions(async({ params: { action, data } }) => {
     switch (action) {
       case 'play':
         play()
@@ -101,12 +101,12 @@ export default () => {
       case 'collect':
         if (!playMusicInfo.musicInfo) return
         void addListMusics(loveList.id, ['progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo : playMusicInfo.musicInfo])
-        if (await updateCollectStatus()) sendPlayerStatus({ collect })
+        if (await updateCollectStatus()) publishPlayerStatus({ collect })
         break
       case 'unCollect':
         if (!playMusicInfo.musicInfo) return
         void removeListMusics({ listId: loveList.id, ids: ['progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo.id : playMusicInfo.musicInfo.id] })
-        if (await updateCollectStatus()) sendPlayerStatus({ collect })
+        if (await updateCollectStatus()) publishPlayerStatus({ collect })
         break
       case 'seek': {
         let progress = data as number
@@ -143,13 +143,13 @@ export default () => {
     // console.log(playProgress.nowPlayTime, newValue, oldValue)
     // if (newValue.toFixed(2) === oldValue.toFixed(2)) return
     // console.log(playProgress.nowPlayTime)
-    sendPlayerStatus({ progress: newValue })
+    publishPlayerStatus({ progress: newValue })
   })
   watch(() => playProgress.maxPlayTime, (newValue) => {
-    sendPlayerStatus({ duration: newValue })
+    publishPlayerStatus({ duration: newValue })
   })
   watch(() => appSetting['player.playbackRate'], rate => {
-    sendPlayerStatus({ playbackRate: rate })
+    publishPlayerStatus({ playbackRate: rate })
   })
 
   window.app_event.on('play', handlePlay)
@@ -183,7 +183,7 @@ export default () => {
     // buttons.lockLrc = setting.desktopLyric.isLock
     await updateCollectStatus()
     if (playMusicInfo.musicInfo == null) return
-    sendPlayerStatus({
+    publishPlayerStatus({
       collect,
       name: musicInfo.name,
       singer: musicInfo.singer,

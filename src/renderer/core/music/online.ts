@@ -1,10 +1,6 @@
 import { updateListMusics } from '@renderer/store/list/action'
 import { appSetting } from '@renderer/store/setting'
-import {
-  saveLyric,
-  saveMusicUrl,
-  getMusicUrl as getStoreMusicUrl,
-} from '@renderer/utils/ipc'
+import { getCachedMusicUrl, saveCachedLyric, saveCachedMusicUrl } from '@renderer/platform/musicCache'
 import {
   buildLyricInfo,
   getPlayQuality,
@@ -52,12 +48,12 @@ export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSou
   //   // return Promise.reject(new Error('该歌曲没有可播放的音频'))
   // }
   const targetQuality = quality ?? getPlayQuality(appSetting['player.playQuality'], musicInfo)
-  const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
+  const cachedUrl = await getCachedMusicUrl(musicInfo, targetQuality)
   if (cachedUrl && !isRefresh) return cachedUrl
 
   return handleGetOnlineMusicUrl({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache }) => {
-    if (targetMusicInfo.id != musicInfo.id && !isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
-    void saveMusicUrl(musicInfo, targetQuality, url)
+    if (targetMusicInfo.id != musicInfo.id && !isFromCache) void saveCachedMusicUrl(targetMusicInfo, targetQuality, url)
+    void saveCachedMusicUrl(musicInfo, targetQuality, url)
     return url
   })
 }
@@ -95,8 +91,8 @@ export const getLyricInfo = async({ musicInfo, isRefresh, allowToggleSource = tr
   return handleGetOnlineLyricInfo({ musicInfo, onToggleSource, isRefresh, allowToggleSource }).then(async({ lyricInfo, musicInfo: targetMusicInfo, isFromCache }) => {
     // lrcRequest = null
     if (isFromCache) return buildLyricInfo(lyricInfo)
-    if (targetMusicInfo.id == musicInfo.id) void saveLyric(musicInfo, lyricInfo)
-    else void saveLyric(targetMusicInfo, lyricInfo)
+    if (targetMusicInfo.id == musicInfo.id) void saveCachedLyric(musicInfo, lyricInfo)
+    else void saveCachedLyric(targetMusicInfo, lyricInfo)
 
     return buildLyricInfo(lyricInfo)
   })
