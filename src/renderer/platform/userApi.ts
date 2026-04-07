@@ -232,7 +232,6 @@ const createWebUserApiHost = (
 ) => {
   let isInitedApi = false
   let isShowedUpdateAlert = false
-  const sandboxWindow = Object.create(window) as Window & typeof globalThis & { lx: any }
 
   const host = {
     EVENT_NAMES,
@@ -339,9 +338,40 @@ const createWebUserApiHost = (
     env: 'web',
   }
 
-  sandboxWindow.lx = host
-  sandboxWindow.globalThis = sandboxWindow
-  sandboxWindow.self = sandboxWindow
+  const sandboxGlobals: Record<string | symbol, any> = {
+    lx: host,
+  }
+  let sandboxWindow!: Window & typeof globalThis & { lx: any }
+  sandboxWindow = new Proxy(window, {
+    get(target, property) {
+      if (property === 'window' || property === 'self' || property === 'globalThis') return sandboxWindow
+      if (property in sandboxGlobals) return sandboxGlobals[property]
+
+      const value = Reflect.get(target, property, target)
+      return typeof value == 'function' ? value.bind(target) : value
+    },
+    set(target, property, value) {
+      if (property in sandboxGlobals || property === 'window' || property === 'self' || property === 'globalThis') {
+        sandboxGlobals[property] = value
+        return true
+      }
+      return Reflect.set(target, property, value, target)
+    },
+    has(target, property) {
+      return property in sandboxGlobals || property in target
+    },
+    getOwnPropertyDescriptor(target, property) {
+      if (property in sandboxGlobals) {
+        return {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: sandboxGlobals[property],
+        }
+      }
+      return Reflect.getOwnPropertyDescriptor(target, property)
+    },
+  }) as Window & typeof globalThis & { lx: any }
 
   return {
     host,
