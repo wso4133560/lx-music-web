@@ -1,4 +1,4 @@
-import { onBeforeUnmount, watch } from '@common/utils/vueTools'
+import { watch } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
 import { openUrl } from '@common/utils/electron'
 import { qualityList, userApi } from '@renderer/store'
@@ -171,23 +171,24 @@ export default () => {
     }
   })
 
-  onBeforeUnmount(() => {
-    rUserApiStatus()
-    rUserApiShowUpdateAlert()
-  })
-
-  return async() => {
-    await setUserApi(appSetting['common.apiSource'])
-    void getRuntimeUserApiList().then(list => {
-      // console.log(list)
-      // if (![...apiSourceInfo.map(s => s.id), ...list.map(s => s.id)].includes(appSetting['common.apiSource'])) {
-      //   console.warn('reset api')
-      //   let api = apiSourceInfo.find(api => !api.disabled)
-      //   if (api) apiSource.value = api.id
-      // }
-      userApi.list = list
-    }).catch(err => {
-      console.log(err)
-    })
+  return {
+    init: async() => {
+      await setUserApi(appSetting['common.apiSource'])
+      void getRuntimeUserApiList().then(list => {
+        // console.log(list)
+        // if (![...apiSourceInfo.map(s => s.id), ...list.map(s => s.id)].includes(appSetting['common.apiSource'])) {
+        //   console.warn('reset api')
+        //   let api = apiSourceInfo.find(api => !api.disabled)
+        //   if (api) apiSource.value = api.id
+        // }
+        userApi.list = list
+      }).catch(err => {
+        console.log(err)
+      })
+    },
+    dispose: () => {
+      rUserApiStatus()
+      rUserApiShowUpdateAlert()
+    },
   }
 }

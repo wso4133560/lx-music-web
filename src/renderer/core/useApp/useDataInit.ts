@@ -30,16 +30,19 @@ const initPrevPlayInfo = async() => {
 export default () => {
   let unregister: null | (() => void) = null
   let unregisterDislikeEvent: null | (() => void) = null
-  let initUserApiPromise: null | Promise<() => Promise<void>> = null
+  let disposeUserApi: null | (() => void) = null
+  let initUserApiPromise: null | Promise<{ init: () => Promise<void>, dispose: () => void }> = null
 
   onBeforeUnmount(() => {
     if (unregister) unregister()
     if (unregisterDislikeEvent) unregisterDislikeEvent()
+    if (disposeUserApi) disposeUserApi()
   })
 
   return async() => {
     initUserApiPromise ??= import('./useInitUserApi').then(({ default: useInitUserApi }) => useInitUserApi())
-    const initUserApi = await initUserApiPromise
+    const { init: initUserApi, dispose } = await initUserApiPromise
+    disposeUserApi = dispose
     await Promise.all([
       initUserApi(), // 自定义API
     ]).catch(err => {
