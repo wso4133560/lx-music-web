@@ -53,11 +53,13 @@ const handle_mouseout = (event) => {
 
 
 onMounted(() => {
+  if (!supportsDesktopWindowControls || !dom_btns.value) return
   window.app_event.on('focus', handle_focus)
   dom_btns.value.addEventListener('mouseover', handle_mouseover)
   dom_btns.value.addEventListener('mouseout', handle_mouseout)
 })
 onBeforeUnmount(() => {
+  if (!supportsDesktopWindowControls || !dom_btns.value) return
   window.app_event.off('focus', handle_focus)
   dom_btns.value.removeEventListener('mouseover', handle_mouseover)
   dom_btns.value.removeEventListener('mouseout', handle_mouseout)

@@ -1,8 +1,14 @@
 <template>
   <div :class="['right', $style.right]" :style="lrcFontSize">
     <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
+      <div v-if="showLyricNotice" :class="$style.emptyState">
+        <p :class="$style.emptyTitle">{{ $t(isLyricLoadFailed ? 'lyric__load_error' : 'lyric__empty') }}</p>
+        <p :class="$style.emptyDesc">{{ $t(isLyricLoadFailed ? 'lyric__load_error_desc' : 'lyric__empty_desc') }}</p>
+      </div>
+    </transition>
+    <transition enter-active-class="animated fadeIn" leave-active-class="animated fadeOut">
       <div
-        v-show="!isShowLrcSelectContent"
+        v-show="!isShowLrcSelectContent && !showLyricNotice"
         ref="dom_lyric"
         :class="['lyric', $style.lyric, { [$style.draging]: isMsDown }, { [$style.lrcActiveZoom]: isZoomActiveLrc }]" :style="lrcStyles"
         @wheel="handleWheel" @mousedown="handleLyricMouseDown" @touchstart="handleLyricTouchStart"
@@ -50,6 +56,7 @@ import {
   isShowPlayComment,
   musicInfo as playerMusicInfo,
   playMusicInfo,
+  status,
 } from '@renderer/store/player/state'
 import {
   setMusicInfo,
@@ -144,6 +151,21 @@ export default {
         '--playDetail-lrc-font-size': (isShowPlayComment.value ? size * 0.82 : size) + 'rem',
       }
     })
+    const lyricFields = computed(() => [
+      playerMusicInfo.lrc,
+      playerMusicInfo.tlrc,
+      playerMusicInfo.rlrc,
+      playerMusicInfo.lxlrc,
+      playerMusicInfo.rawlrc,
+    ])
+    const lyricsLoaded = computed(() => lyricFields.value.every(item => item != null))
+    const hasLyricContent = computed(() => lyric.lines.length > 0 || lyricFields.value.some(item => item?.trim()))
+    const isLyricLoadFailed = computed(() => status.value === window.i18n.t('lyric__load_error'))
+    const showLyricNotice = computed(() => {
+      if (isShowLrcSelectContent.value || !playMusicInfo.musicInfo) return false
+      if (isLyricLoadFailed.value) return !hasLyricContent.value
+      return lyricsLoaded.value && !hasLyricContent.value
+    })
 
     onMounted(() => {
       window.app_event.on('musicToggled', updateMusicInfo)
@@ -170,12 +192,14 @@ export default {
       lyric,
       lrcStyles,
       lrcFontSize,
+      isLyricLoadFailed,
       isShowLrcSelectContent,
       isShowLyricProgressSetting,
       isZoomActiveLrc,
       isStopScroll,
       lyricMenuVisible,
       lyricMenuXY,
+      showLyricNotice,
       handleShowLyricMenu,
       handleUpdateLyric,
       lyricInfo,
@@ -201,6 +225,26 @@ export default {
   // padding: 0 30px;
   position: relative;
   transition: flex-basis @transition-normal;
+}
+.emptyState {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  color: var(--color-font-label);
+}
+.emptyTitle {
+  margin: 0;
+  font-size: calc(var(--playDetail-lrc-font-size, 16px) * 1.15);
+  color: var(--color-font);
+}
+.emptyDesc {
+  margin: 12px 0 0;
+  max-width: 320px;
+  line-height: 1.6;
 }
 .lyric {
   text-align: center;

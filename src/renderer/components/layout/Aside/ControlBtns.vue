@@ -37,11 +37,13 @@ const handle_mouseleave = () => {
 
 
 onMounted(() => {
+  if (!supportsDesktopWindowControls || !dom_btns.value) return
   window.app_event.on('focus', handle_focus)
   dom_btns.value.addEventListener('mouseenter', handle_mouseenter)
   dom_btns.value.addEventListener('mouseleave', handle_mouseleave)
 })
 onBeforeUnmount(() => {
+  if (!supportsDesktopWindowControls || !dom_btns.value) return
   window.app_event.off('focus', handle_focus)
   dom_btns.value.removeEventListener('mouseenter', handle_mouseenter)
   dom_btns.value.removeEventListener('mouseleave', handle_mouseleave)

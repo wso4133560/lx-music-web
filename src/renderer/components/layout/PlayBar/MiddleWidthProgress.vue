@@ -8,7 +8,14 @@
       <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
         {{ title }}
       </div>
-      <div :class="$style.status">{{ statusText }}</div>
+      <div :class="$style.statusRow">
+        <div :class="$style.status" :aria-label="$t('player__open_lyrics_tip')" @click="showPlayerDetail">
+          {{ statusText || (playMusicInfo.musicInfo ? $t('player__lyrics_available') : '') }}
+        </div>
+        <button v-if="playMusicInfo.musicInfo" type="button" :class="$style.lyricBtn" :aria-label="$t('player__open_lyrics_tip')" @click="showPlayerDetail">
+          {{ $t('player__open_lyrics') }}
+        </button>
+      </div>
     </div>
     <div :class="$style.timeContent">
       <span>{{ nowPlayTimeStr }}</span>
@@ -138,6 +145,7 @@ export default {
       playPrev,
       handleToMusicLocation,
       isShowPlayerDetail,
+      playMusicInfo,
     }
   },
 }
@@ -247,11 +255,42 @@ export default {
   color: var(--color-font-label);
   .mixin-ellipsis-1();
 }
-.status {
+.statusRow {
   padding-top: 3px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status {
   height: 23px;
+  flex: auto;
   .mixin-ellipsis-1();
   max-width: 100%;
+  cursor: pointer;
+  transition: color @transition-fast;
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+.lyricBtn {
+  flex: none;
+  height: 22px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--color-primary-alpha-200);
+  color: var(--color-primary);
+  font-size: 12px;
+  line-height: 22px;
+  cursor: pointer;
+  transition: opacity @transition-fast, background-color @transition-fast;
+
+  &:hover {
+    opacity: .86;
+    background-color: var(--color-primary-alpha-300);
+  }
 }
 
 .timeContent {
