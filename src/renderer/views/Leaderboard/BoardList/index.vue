@@ -83,7 +83,8 @@ watch(() => props.source, async(source) => {
   let boardList = boards[source]
   if (boardList == null) setBoard(boardList = await getBoardsList(source), source)
   list.splice(0, list.length, ...boardList.list)
-  if (!props.boardId && boardList.list.length) handleToggleList(boardList.list[0].id)
+  const hasCurrentBoard = props.boardId && boardList.list.some(item => item.id == props.boardId)
+  if ((!props.boardId || !hasCurrentBoard) && boardList.list.length) handleToggleList(boardList.list[0].id)
 }, {
   immediate: true,
 })
@@ -149,4 +150,3 @@ defineExpose({ hideMenu: handleMenuClick })
 
 
 </style>
-

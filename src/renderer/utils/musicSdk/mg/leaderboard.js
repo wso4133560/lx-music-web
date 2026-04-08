@@ -70,14 +70,8 @@ const boardList = [
     source: 'mg',
   },
   {
-    id: 'mg__19190036',
-    name: '欧美榜',
-    bangid: '19190036',
-    source: 'mg',
-  },
-  {
     id: 'mg__83176390',
-    name: '国风金曲榜',
+    name: '国风热歌榜',
     bangid: '83176390',
     source: 'mg',
   },
@@ -191,27 +185,41 @@ export default {
   //   }
   //   return list
   // },
+  filterBoardsData(rawData, list = [], ids = new Set()) {
+    if (!rawData?.contents) return list
+    for (const group of rawData.contents) {
+      for (const item of group.contents ?? []) {
+        if (!item.rankId || ids.has(item.rankId)) continue
+        ids.add(item.rankId)
+        list.push({
+          id: `mg__${item.rankId}`,
+          name: item.rankName,
+          bangid: String(item.rankId),
+          source: 'mg',
+        })
+      }
+    }
+    return list
+  },
   async getBoards(retryNum = 0) {
-    // if (++retryNum > 3) return Promise.reject(new Error('try max num'))
-    // let response
-    // try {
-    //   response = await this.getBoardsData()
-    // } catch (error) {
-    //   return this.getBoards(retryNum)
-    // }
-    // // console.log(response.body.data.contentItemList)
-    // if (response.statusCode !== 200 || response.body.code !== this.successCode) return this.getBoards(retryNum)
-    // const list = this.filterBoardsData(response.body.data.contents)
-    // console.log(list)
-    // // console.log(JSON.stringify(list))
-    // this.list = list
-    // return {
-    //   list,
-    //   source: 'mg',
-    // }
-    this.list = boardList
+    if (++retryNum > 3) {
+      this.list = boardList
+      return {
+        list: boardList,
+        source: 'mg',
+      }
+    }
+    let response
+    try {
+      response = await this.getBoardsData()
+    } catch (error) {
+      return this.getBoards(retryNum)
+    }
+    if (response.statusCode !== 200 || response.body.code !== this.successCode) return this.getBoards(retryNum)
+    const list = this.filterBoardsData(response.body.data)
+    this.list = list.length ? list : boardList
     return {
-      list: boardList,
+      list: this.list,
       source: 'mg',
     }
   },
@@ -219,6 +227,15 @@ export default {
     if (++retryNum > 3) return Promise.reject(new Error('try max num'))
     return this.getData(this.getUrl(bangid, page)).then(({ statusCode, body }) => {
       // console.log(body)
+      if (body.code === '302001') {
+        return {
+          total: 0,
+          list: [],
+          limit: this.limit,
+          page,
+          source: 'mg',
+        }
+      }
       if (statusCode !== 200 || body.code !== this.successCode) return this.getList(bangid, page, retryNum)
       const list = filterMusicInfoList(body.columnInfo.contents.map(m => m.objectInfo))
       return {
