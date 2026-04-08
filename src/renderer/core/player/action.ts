@@ -55,6 +55,14 @@ const createDelayNextTimeout = (delay: number) => {
 const { addDelayNextTimeout, clearDelayNextTimeout } = createDelayNextTimeout(5000)
 const { addDelayNextTimeout: addLoadTimeout, clearDelayNextTimeout: clearLoadTimeout } = createDelayNextTimeout(100000)
 
+const normalizeLyricState = (lyricInfo: LX.Player.LyricInfo) => ({
+  lrc: lyricInfo.lyric ?? '',
+  tlrc: lyricInfo.tlyric ?? '',
+  lxlrc: lyricInfo.lxlyric ?? '',
+  rlrc: lyricInfo.rlyric ?? '',
+  rawlrc: lyricInfo.rawlrcInfo?.lyric ?? lyricInfo.lyric ?? '',
+})
+
 /**
  * 检查音乐信息是否已更改
  */
@@ -166,13 +174,7 @@ const handleRestorePlay = async(restorePlayInfo: LX.Player.SavedPlayInfo) => {
 
   void getLyricInfo({ musicInfo }).then((lyricInfo) => {
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
-    setMusicInfo({
-      lrc: lyricInfo.lyric,
-      tlrc: lyricInfo.tlyric,
-      lxlrc: lyricInfo.lxlyric,
-      rlrc: lyricInfo.rlyric,
-      rawlrc: lyricInfo.rawlrcInfo.lyric,
-    })
+    setMusicInfo(normalizeLyricState(lyricInfo))
     window.app_event.lyricUpdated()
   }).catch((err) => {
     console.log(err)
@@ -217,13 +219,7 @@ const handlePlay = () => {
 
   void getLyricInfo({ musicInfo }).then((lyricInfo) => {
     if (musicInfo.id != playMusicInfo.musicInfo?.id) return
-    setMusicInfo({
-      lrc: lyricInfo.lyric,
-      tlrc: lyricInfo.tlyric,
-      lxlrc: lyricInfo.lxlyric,
-      rlrc: lyricInfo.rlyric,
-      rawlrc: lyricInfo.rawlrcInfo.lyric,
-    })
+    setMusicInfo(normalizeLyricState(lyricInfo))
     window.app_event.lyricUpdated()
   }).catch((err) => {
     console.log(err)

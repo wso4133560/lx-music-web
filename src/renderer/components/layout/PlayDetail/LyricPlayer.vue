@@ -112,11 +112,11 @@ export default {
       musicInfo: null,
     })
     const updateMusicInfo = () => {
-      lyricInfo.lyric = playerMusicInfo.lrc
-      lyricInfo.tlyric = playerMusicInfo.tlrc
-      lyricInfo.rlyric = playerMusicInfo.rlrc
-      lyricInfo.lxlyric = playerMusicInfo.lxlrc
-      lyricInfo.rawlyric = playerMusicInfo.rawlrc
+      lyricInfo.lyric = playerMusicInfo.lrc ?? ''
+      lyricInfo.tlyric = playerMusicInfo.tlrc ?? ''
+      lyricInfo.rlyric = playerMusicInfo.rlrc ?? ''
+      lyricInfo.lxlyric = playerMusicInfo.lxlrc ?? ''
+      lyricInfo.rawlyric = playerMusicInfo.rawlrc ?? ''
       lyricInfo.musicInfo = playMusicInfo.musicInfo
     }
     const handleShowLyricMenu = event => {
@@ -158,16 +158,18 @@ export default {
       playerMusicInfo.lxlrc,
       playerMusicInfo.rawlrc,
     ])
-    const lyricsLoaded = computed(() => lyricFields.value.every(item => item != null))
-    const hasLyricContent = computed(() => lyric.lines.length > 0 || lyricFields.value.some(item => item?.trim()))
+    const hasPendingLyricRequest = computed(() => lyricFields.value.some(item => item == null))
+    const hasLyricText = computed(() => lyricFields.value.some(item => typeof item == 'string' && item.trim()))
+    const hasLyricContent = computed(() => lyric.lines.length > 0 || hasLyricText.value)
     const isLyricLoadFailed = computed(() => status.value === window.i18n.t('lyric__load_error'))
     const showLyricNotice = computed(() => {
-      if (isShowLrcSelectContent.value || !playMusicInfo.musicInfo) return false
-      if (isLyricLoadFailed.value) return !hasLyricContent.value
-      return lyricsLoaded.value && !hasLyricContent.value
+      if (isShowLrcSelectContent.value || !playMusicInfo.musicInfo || hasLyricContent.value) return false
+      if (isLyricLoadFailed.value) return true
+      return !hasPendingLyricRequest.value
     })
 
     onMounted(() => {
+      updateMusicInfo()
       window.app_event.on('musicToggled', updateMusicInfo)
       window.app_event.on('lyricUpdated', updateMusicInfo)
     })
@@ -258,13 +260,13 @@ export default {
   }
   :global {
     .font-lrc {
-      color: var(--color-450);
+      color: var(--color-700);
     }
     .line-content {
       line-height: 1.2;
       padding: calc(var(--playDetail-lrc-font-size, 16px) / 2) 1px;
       overflow-wrap: break-word;
-      color: var(--color-450);
+      color: var(--color-700);
       transition: @transition-normal;
       transition-property: padding;
 
@@ -279,7 +281,7 @@ export default {
         }
       }
       &.line-mode.active .font-lrc, &.font-mode.played .font-lrc {
-        color: var(--color-primary-dark-200);
+        color: var(--color-primary-dark-100);
       }
       &.font-mode .extended .font-lrc {
         transition: @transition-slow;
@@ -291,9 +293,10 @@ export default {
           transition: @transition-normal;
           transition-property: font-size;
           font-size: 1em;
+          color: var(--color-700);
           background-repeat: no-repeat;
-          background-color: var(--color-450);
-          background-image: -webkit-linear-gradient(top, var(--color-primary-dark-200), var(--color-primary-dark-200));
+          background-color: var(--color-700);
+          background-image: -webkit-linear-gradient(top, var(--color-primary-dark-100), var(--color-primary-dark-100));
           -webkit-text-fill-color: transparent;
           -webkit-background-clip: text;
           background-size: 0 100%;

@@ -73,6 +73,20 @@ const mrcTools = {
     if (!url) return Promise.resolve('')
     return this.getText(url)
   },
+  getBestLyric(info) {
+    if (info.mrcUrl) {
+      return this.getMrc(info.mrcUrl).then(lrcInfo => {
+        if (lrcInfo.lyric?.trim()) return lrcInfo
+        if (!info.lrcUrl) throw new Error('获取歌词失败')
+        return this.getLrc(info.lrcUrl)
+      }).catch(err => {
+        if (!info.lrcUrl) throw err
+        return this.getLrc(info.lrcUrl)
+      })
+    }
+    if (info.lrcUrl) return this.getLrc(info.lrcUrl)
+    return Promise.reject(new Error('获取歌词失败'))
+  },
   async getMusicInfo(songInfo) {
     return songInfo.mrcUrl == null
       ? (await getMusicInfo(songInfo.copyrightId)) ?? songInfo
@@ -81,11 +95,7 @@ const mrcTools = {
   getLyric(songInfo) {
     return {
       promise: this.getMusicInfo(songInfo).then(info => {
-        let p
-        if (info.mrcUrl) p = this.getMrc(info.mrcUrl)
-        else if (info.lrcUrl) p = this.getLrc(info.lrcUrl)
-        if (p == null) return Promise.reject(new Error('获取歌词失败'))
-        return Promise.all([p, this.getTrc(info.trcUrl)]).then(([lrcInfo, tlyric]) => {
+        return Promise.all([this.getBestLyric(info), this.getTrc(info.trcUrl)]).then(([lrcInfo, tlyric]) => {
           lrcInfo.tlyric = tlyric
           return lrcInfo
         })
