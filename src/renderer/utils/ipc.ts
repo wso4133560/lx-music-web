@@ -32,16 +32,32 @@ const writeWebData = (key: string, value: unknown) => {
   writeWebStorage(key, value)
 }
 
+const normalizeWebSetting = (setting: Partial<LX.AppSetting>) => {
+  const nextSetting = {
+    ...defaultSetting,
+    ...setting,
+  }
+  if (nextSetting['common.apiSource'] == 'temp') nextSetting['common.apiSource'] = 'test'
+  return nextSetting
+}
+
 export const getSetting = async() => {
-  if (isWebRuntime) return readWebStorage('app_setting', { ...defaultSetting })
+  if (isWebRuntime) {
+    const rawSetting = readWebStorage('app_setting', { ...defaultSetting })
+    const nextSetting = normalizeWebSetting(rawSetting)
+    if (rawSetting['common.apiSource'] != nextSetting['common.apiSource']) {
+      writeWebStorage('app_setting', nextSetting)
+    }
+    return nextSetting
+  }
   return (await rendererInvoke<LX.AppSetting>(CMMON_EVENT_NAME.get_app_setting)) ?? { ...defaultSetting }
 }
 export const updateSetting = async(setting: Partial<LX.AppSetting>) => {
   if (isWebRuntime) {
-    writeWebStorage('app_setting', {
+    writeWebStorage('app_setting', normalizeWebSetting({
       ...readWebStorage('app_setting', { ...defaultSetting }),
       ...setting,
-    })
+    }))
     return
   }
   await rendererInvoke(CMMON_EVENT_NAME.set_app_setting, setting)
@@ -94,10 +110,11 @@ export const setIgnoreMouseEvents = (ignore: boolean) => {
 
 export const getEnvParams = async() => {
   if (isWebRuntime) {
-    return {
+    const envParams: LX.EnvParams = {
       cmdParams: {},
       deeplink: null,
-    } as LX.EnvParams
+    }
+    return envParams
   }
   return rendererInvoke<LX.EnvParams>(CMMON_EVENT_NAME.get_env_params)
 }
@@ -606,7 +623,10 @@ export const onThemeChange = (listener: LX.IpcRendererEventListenerParams<LX.The
  * 选择路径
  */
 export const showSelectDialog = async(options: Electron.OpenDialogOptions) => {
-  if (isWebRuntime) return { canceled: true, filePaths: [] } as Electron.OpenDialogReturnValue
+  if (isWebRuntime) {
+    const result: Electron.OpenDialogReturnValue = { canceled: true, filePaths: [] }
+    return result
+  }
   return rendererInvoke<Electron.OpenDialogOptions, Electron.OpenDialogReturnValue>(WIN_MAIN_RENDERER_EVENT_NAME.show_select_dialog, options)
 }
 
@@ -614,7 +634,10 @@ export const showSelectDialog = async(options: Electron.OpenDialogOptions) => {
  * 打开保存对话框
  */
 export const openSaveDir = async(options: Electron.SaveDialogOptions) => {
-  if (isWebRuntime) return { canceled: true, filePath: undefined } as Electron.SaveDialogReturnValue
+  if (isWebRuntime) {
+    const result: Electron.SaveDialogReturnValue = { canceled: true, filePath: undefined }
+    return result
+  }
   return rendererInvoke<Electron.SaveDialogOptions, Electron.SaveDialogReturnValue>(WIN_MAIN_RENDERER_EVENT_NAME.show_save_dialog, options)
 }
 
