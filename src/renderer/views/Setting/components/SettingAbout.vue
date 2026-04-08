@@ -4,12 +4,12 @@ dd
   .p.small
     | 本软件完全免费，代码已开源。开源地址：
     span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://github.com/lyswhut/lx-music-desktop#readme')") https://github.com/lyswhut/lx-music-desktop
-  .p.small
+  .p.small(v-if="!isWebRuntime")
     | 最新版下载地址：
     span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://github.com/lyswhut/lx-music-desktop/releases')") GitHub Releases
   .p.small
     | 软件的常见问题可转至：
-    span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://lyswhut.github.io/lx-music-doc/desktop/faq')") 桌面版常见问题
+    span.hover.underline(:aria-label="$t('setting__click_open')" @click="openUrl('https://lyswhut.github.io/lx-music-doc/desktop/faq')") {{ isWebRuntime ? '项目常见问题' : '桌面版常见问题' }}
   .p.small
     strong 本软件没有客服
     | ，但我们整理了一些常见的使用问题。
@@ -45,6 +45,7 @@ dd
 // import { ref, onBeforeUnmount } from '@common/utils/vueTools'
 import { isShowPact } from '@renderer/store'
 import { openUrl, clipboardWriteText } from '@common/utils/electron'
+import { isWebRuntime } from '@renderer/platform/runtime'
 
 export default {
   name: 'SettingAbout',
@@ -53,6 +54,7 @@ export default {
       isShowPact.value = true
     }
     return {
+      isWebRuntime,
       openUrl,
       clipboardWriteText,
       handleShowPact,

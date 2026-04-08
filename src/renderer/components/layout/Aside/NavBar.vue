@@ -1,6 +1,6 @@
 <template>
   <div ref="dom_menu" :class="$style.menu">
-    <ul :class="$style.list" role="toolbar">
+    <ul :class="$style.list" role="tablist" aria-orientation="vertical">
       <li v-for="item in menus" :key="item.to" :class="$style.navItem" role="presentation">
         <router-link :class="[$style.link, {[$style.active]: $route.meta.name == item.name}]" role="tab" :aria-selected="$route.meta.name == item.name" :to="item.to" :aria-label="item.tips">
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" :viewBox="item.iconSize" :height="item.size" :width="item.size" space="preserve">

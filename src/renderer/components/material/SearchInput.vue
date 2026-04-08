@@ -5,6 +5,8 @@
         <input
           ref="dom_input"
           v-model.trim="text"
+          name="keyword"
+          :aria-label="placeholder || $t('search')"
           :placeholder="placeholder"
           @focus="handleFocus"
           @blur="handleBlur"
@@ -17,13 +19,13 @@
           @contextmenu="handleContextMenu"
         >
         <transition enter-active-class="animated zoomIn" leave-active-class="animated zoomOut">
-          <button v-show="text" type="button" @click="handleClearList">
+          <button v-show="text" type="button" :aria-label="$t('search__clear')" @click="handleClearList">
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 24 24" space="preserve">
               <use xlink:href="#icon-window-close" />
             </svg>
           </button>
         </transition>
-        <button type="button" @click="handleSearch">
+        <button type="button" :aria-label="$t('search__submit')" @click="handleSearch">
           <slot>
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 30.239 30.239" space="preserve">
               <use xlink:href="#icon-search" />

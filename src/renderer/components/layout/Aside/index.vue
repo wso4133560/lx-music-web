@@ -43,8 +43,8 @@ import NavBar from './NavBar.vue'
   box-sizing: border-box;
   padding: 0 13%;
   height: 50px;
-  color: var(--color-nav-font);
-  opacity: .8;
+  color: var(--color-primary-dark-400);
+  opacity: 1;
   flex: none;
   text-align: center;
   line-height: 50px;

@@ -4,7 +4,7 @@ div(:class="$style.container")
     li(v-for="item in comments" :key="item.id" :class="$style.listItem")
       div(:class="$style.content")
         div(:class="$style.left")
-          img( :class="$style.avatar" :src="item.avatar || commentDefImg" @error="handleUserImg")
+          img(:class="$style.avatar" :src="item.avatar || commentDefImg" alt="" @error="handleUserImg")
         div(:class="$style.right")
           div(:class="$style.info")
             div(:class="$style.baseInfo")
@@ -18,7 +18,7 @@ div(:class="$style.container")
               | {{ item.likedCount }}
           p.select(:class="$style.comment_text") {{ item.text }}
           div(v-if="item.images?.length" :class="$style.comment_images")
-            img(v-for="(url, index) in item.images" :key="index" :src="url" loading="lazy" decoding="async")
+            img(v-for="(url, index) in item.images" :key="index" :src="url" alt="" loading="lazy" decoding="async")
       comment-floor(v-if="item.reply && item.reply.length" :class="$style.reply_floor" :comments="item.reply")
 </template>
 

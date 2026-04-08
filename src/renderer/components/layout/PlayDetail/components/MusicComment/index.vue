@@ -3,10 +3,10 @@ div.comment(ref="dom_container" :class="$style.comment")
   div(:class="$style.commentHeader")
     h3 {{ $t('comment__title', { name: currentMusicInfo.name }) }}
     div(:class="$style.commentHeaderBtns")
-      div(:class="$style.commentHeaderBtn" :aria-label="$t('comment__refresh')" @click="handleShowComment")
+      button(type="button" :class="$style.commentHeaderBtn" :aria-label="$t('comment__refresh')" @click="handleShowComment")
         svg(version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" style="transform: rotate(45deg);" viewBox="0 0 24 24" space="preserve")
           use(xlink:href="#icon-refresh")
-      div(:class="$style.commentHeaderBtn" @click="$emit('close')")
+      button(type="button" :class="$style.commentHeaderBtn" :aria-label="$t('close')" @click="$emit('close')")
         svg(version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24" space="preserve")
           use(xlink:href="#icon-close")
 
@@ -275,7 +275,14 @@ export default {
 .commentHeaderBtn {
   height: 22px;
   width: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: opacity @transition-normal;
 
   +.commentHeaderBtn {

@@ -10,7 +10,7 @@ transition(enter-active-class="animated slideInRight" leave-active-class="animat
       div.left(:class="$style.left")
         //- div(:class="$style.info")
         div(:class="$style.info")
-          img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic")
+          img(v-if="musicInfo.pic" :class="$style.img" :src="musicInfo.pic" :alt="musicInfo.name || $t('player__pic_tip')")
           div.description(:class="['scroll', $style.description]")
             p {{ $t('player__music_name') }}{{ musicInfo.name }}
             p {{ $t('player__music_singer') }}{{ musicInfo.singer }}

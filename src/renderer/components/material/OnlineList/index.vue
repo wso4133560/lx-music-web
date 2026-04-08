@@ -319,6 +319,9 @@ export default {
   // left: 50%;
   // transform: translateX(-50%);
 }
+:global(.list-item-cell.num) {
+  color: var(--color-700) !important;
+}
 .noitem {
   position: absolute;
   top: 0;

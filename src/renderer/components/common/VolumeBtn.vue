@@ -10,7 +10,7 @@
         <div :class="$style.info">
           <span>{{ Math.trunc(volume * 100) }}%</span>
           <base-checkbox
-            id="player__volume_mute"
+            :id="muteCheckboxId"
             :model-value="isMute"
             :label="$t('player__volume_mute_label')"
             @update:model-value="saveVolumeIsMute($event)"
@@ -37,6 +37,8 @@ const handleWheel = (event) => {
 const handleUpdateVolume = (val) => {
   window.app_event.setVolume(val)
 }
+
+const muteCheckboxId = `player__volume_mute_${Math.random().toString(36).slice(2, 8)}`
 
 const icon = computed(() => {
   return isMute.value

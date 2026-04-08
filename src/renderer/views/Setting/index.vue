@@ -1,7 +1,7 @@
 <template>
   <div :class="$style.main">
     <div class="scroll" :class="$style.toc">
-      <ul :class="$style.tocList" role="toolbar">
+      <ul :class="$style.tocList" role="tablist" aria-orientation="vertical">
         <li v-for="h2 in tocList" :key="h2.id" :class="$style.tocListItem" role="presentation">
           <h2
             :class="[$style.tocH2, {[$style.active]: avtiveComponentName == h2.id }]"
@@ -65,11 +65,17 @@ import SettingNetwork from './components/SettingNetwork.vue'
 import SettingOdc from './components/SettingOdc.vue'
 import SettingAbout from './components/SettingAbout.vue'
 
+// eslint-disable-next-line @typescript-eslint/promise-function-async
 const SettingDesktopLyric = defineAsyncComponent(() => import('./components/SettingDesktopLyric.vue'))
+// eslint-disable-next-line @typescript-eslint/promise-function-async
 const SettingOpenAPI = defineAsyncComponent(() => import('./components/SettingOpenAPI.vue'))
+// eslint-disable-next-line @typescript-eslint/promise-function-async
 const SettingHotKey = defineAsyncComponent(() => import('./components/SettingHotKey.vue'))
+// eslint-disable-next-line @typescript-eslint/promise-function-async
 const SettingBackup = defineAsyncComponent(() => import('./components/SettingBackup.vue'))
+// eslint-disable-next-line @typescript-eslint/promise-function-async
 const SettingOther = defineAsyncComponent(() => import('./components/SettingOther.vue'))
+// eslint-disable-next-line @typescript-eslint/promise-function-async
 const SettingUpdate = defineAsyncComponent(() => import('./components/SettingUpdate.vue'))
 
 export default {

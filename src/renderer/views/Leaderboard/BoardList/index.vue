@@ -108,13 +108,14 @@ defineExpose({ hideMenu: handleMenuClick })
   transition: .3s ease;
   transition-property: color, background-color;
   background-color: transparent;
+  color: var(--color-700);
   &:hover:not(.active) {
     background-color: var(--color-primary-background-hover);
     cursor: pointer;
   }
   &.active {
     // background-color:
-    color: var(--color-primary);
+    color: var(--color-primary-dark-300);
   }
   &.selected {
     background-color: var(--color-primary-font-active);

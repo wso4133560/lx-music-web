@@ -1,17 +1,17 @@
 <template>
   <div :class="$style.player">
-    <div :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
-      <img v-if="musicInfo.pic" :src="musicInfo.pic" decoding="async" @error="imgError">
-      <div v-else :class="$style.emptyPic">L<span>X</span></div>
-    </div>
+    <button type="button" :class="$style.picContent" :aria-label="$t('player__pic_tip')" @contextmenu="handleToMusicLocation" @click="showPlayerDetail">
+      <img v-if="musicInfo.pic" :src="musicInfo.pic" :alt="title || $t('player__pic_tip')" decoding="async" @error="imgError">
+      <div v-else :class="$style.emptyPic" aria-hidden="true">L<span>X</span></div>
+    </button>
     <div :class="$style.infoContent">
-      <div :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
+      <button type="button" :class="$style.title" :aria-label="title + $t('copy_tip')" @click="handleCopy(title)">
         {{ title }}
-      </div>
+      </button>
       <div :class="$style.statusRow">
-        <div :class="$style.status" :aria-label="$t('player__open_lyrics_tip')" @click="showPlayerDetail">
+        <button type="button" :class="$style.status" :aria-label="$t('player__open_lyrics_tip')" @click="showPlayerDetail">
           {{ statusText || (playMusicInfo.musicInfo ? $t('player__lyrics_available') : '') }}
-        </div>
+        </button>
         <button v-if="playMusicInfo.musicInfo" type="button" :class="$style.lyricBtn" :aria-label="$t('player__open_lyrics_tip')" @click="showPlayerDetail">
           {{ $t('player__open_lyrics') }}
         </button>
@@ -30,24 +30,24 @@
     <play-progress />
     <control-btns />
     <div :class="$style.playBtnContent">
-      <div :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
+      <button type="button" :class="$style.playBtn" :aria-label="$t('player__prev')" @click="playPrev()">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
           <use xlink:href="#icon-prevMusic" />
         </svg>
-      </div>
-      <div :class="$style.playBtn" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
+      </button>
+      <button type="button" :class="$style.playBtn" :aria-label="isPlay ? $t('player__pause') : $t('player__play')" @click="togglePlay">
         <svg v-if="isPlay" version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
           <use xlink:href="#icon-pause" />
         </svg>
         <svg v-else version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
           <use xlink:href="#icon-play" />
         </svg>
-      </div>
-      <div :class="$style.playBtn" :aria-label="$t('player__next')" @click="playNext()">
+      </button>
+      <button type="button" :class="$style.playBtn" :aria-label="$t('player__next')" @click="playNext()">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" height="100%" viewBox="0 0 1024 1024" space="preserve">
           <use xlink:href="#icon-nextMusic" />
         </svg>
-      </div>
+      </button>
     </div>
   </div>
 </template>
@@ -188,6 +188,9 @@ export default {
 .picContent {
   height: 100%;
   aspect-ratio: 1 / 1;
+  padding: 0;
+  border: none;
+  background: none;
 
   // color: var(--color-primary);
   // transition: @transition-normal;
@@ -252,9 +255,17 @@ export default {
 }
 
 .title {
+  display: block;
+  width: 100%;
   max-width: 100%;
   font-size: 12px;
   color: var(--color-font-label);
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  line-height: inherit;
   .mixin-ellipsis-1();
 }
 .statusRow {
@@ -265,10 +276,18 @@ export default {
   gap: 8px;
 }
 .status {
+  display: block;
   height: 23px;
   flex: auto;
+  width: 100%;
   .mixin-ellipsis-1();
   max-width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  line-height: inherit;
   cursor: pointer;
   transition: color @transition-fast;
 
@@ -356,6 +375,12 @@ export default {
 .playBtn {
   flex: none;
   height: 52%;
+  padding: 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   // margin-top: -2px;
   transition: @transition-fast;
   transition-property: color, opacity;
