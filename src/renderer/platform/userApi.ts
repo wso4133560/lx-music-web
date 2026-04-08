@@ -499,7 +499,8 @@ export const sendRuntimeUserApiRequest = async(params: LX.UserApi.UserApiRequest
           action: data.action,
           data: {
             type: data.info.type,
-            url: response,
+            // Keep playback same-origin in browsers so the audio element + WebAudio pipeline can read it.
+            url: buildProxyRequestUrl(response),
           },
         }
       case 'lyric':
